@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Email Template Editor",
+  "description": "A professional React drag-and-drop newsletter builder that visually edits email templates and compiles them into clean responsive MJML markup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
