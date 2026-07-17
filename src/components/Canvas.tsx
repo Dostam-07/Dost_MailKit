@@ -104,16 +104,41 @@ export default function Canvas({
       const dx = e.clientX - resizeStartCoords.x;
       const dy = e.clientY - resizeStartCoords.y;
       
-      const newWidth = Math.max(60, resizeStartCoords.blockWidth + dx);
-      const newHeight = Math.max(20, resizeStartCoords.blockHeight + dy);
-      
-      onUpdateBlock(resizingBlockId, {
-        style: {
-          ...blocks.find(b => b.id === resizingBlockId)?.style,
-          width: `${newWidth}px`,
-          height: `${newHeight}px`
+      const block = blocks.find(b => b.id === resizingBlockId);
+      if (!block) return;
+
+      if (globalSettings.layoutMode === 'figma') {
+        const newWidth = Math.max(60, resizeStartCoords.blockWidth + dx);
+        const newHeight = Math.max(20, resizeStartCoords.blockHeight + dy);
+        
+        onUpdateBlock(resizingBlockId, {
+          style: {
+            ...block.style,
+            width: `${newWidth}px`,
+            height: `${newHeight}px`
+          }
+        });
+      } else {
+        // Flow layout resizing
+        if (block.type === 'spacer') {
+          const newHeight = Math.max(5, resizeStartCoords.blockHeight + dy);
+          onUpdateBlock(resizingBlockId, {
+            properties: {
+              ...block.properties,
+              height: newHeight
+            }
+          });
+        } else if (block.type === 'image') {
+          // Width resizing for images in flow
+          const newWidth = Math.max(20, Math.min(100, resizeStartCoords.blockWidth + (dx / 5))); // Scale dx for percentage
+          onUpdateBlock(resizingBlockId, {
+            properties: {
+              ...block.properties,
+              width: `${newWidth}%`
+            }
+          });
         }
-      });
+      }
     };
 
     const handleMouseUp = () => {
@@ -158,8 +183,22 @@ export default function Canvas({
     e.preventDefault();
     
     const el = document.getElementById(`canvas-block-${block.id}`);
-    const currentWidth = el ? el.offsetWidth : parseInt(block.style.width || '250') || 250;
-    const currentHeight = el ? el.offsetHeight : parseInt(block.style.height || '120') || 120;
+    
+    let currentWidth = 0;
+    let currentHeight = 0;
+
+    if (globalSettings.layoutMode === 'figma') {
+      currentWidth = el ? el.offsetWidth : parseInt(block.style.width || '250') || 250;
+      currentHeight = el ? el.offsetHeight : parseInt(block.style.height || '120') || 120;
+    } else {
+      // For flow layout blocks
+      if (block.type === 'spacer') {
+        currentHeight = block.properties?.height || 30;
+      } else if (block.type === 'image') {
+        // Convert current width property (usually percentage) to a number for relative dragging
+        currentWidth = parseInt(block.properties?.width || '100') || 100;
+      }
+    }
     
     setResizingBlockId(block.id);
     setResizeStartCoords({
@@ -941,18 +980,30 @@ export default function Canvas({
                         )}
 
                         {block.type === 'image' && (
-                          <div className={`flex justify-${block.style.textAlign === 'center' ? 'center' : block.style.textAlign === 'right' ? 'end' : 'start'}`}>
-                            <img
-                              src={block.properties?.src || 'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?w=600&auto=format&fit=crop&q=80'}
-                              alt={block.properties?.alt || 'Placeholder'}
-                              style={{ 
-                                width: block.properties?.width || '100%',
-                                borderRadius: `${block.style.borderRadius || 0}px`
-                              }}
-                              className="max-w-full h-auto object-cover select-none"
-                              referrerPolicy="no-referrer"
-                              crossOrigin="anonymous"
-                            />
+                          <div className={`flex justify-${block.style.textAlign === 'center' ? 'center' : block.style.textAlign === 'right' ? 'end' : 'start'} relative group/img`}>
+                            <div className="relative inline-block max-w-full">
+                              <img
+                                src={block.properties?.src || 'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?w=600&auto=format&fit=crop&q=80'}
+                                alt={block.properties?.alt || 'Placeholder'}
+                                style={{ 
+                                  width: block.properties?.width || '100%',
+                                  borderRadius: `${block.style.borderRadius || 0}px`
+                                }}
+                                className="max-w-full h-auto object-cover select-none"
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                              />
+                              {/* Width Resize Handle for Image */}
+                              {!block.locked && isSelected && !isFigmaAbsolute && (
+                                <div 
+                                  onMouseDown={(e) => handleResizeMouseDown(e, block)}
+                                  className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-8 bg-blue-600 rounded-full cursor-ew-resize flex items-center justify-center shadow-lg border border-white z-20 hover:scale-110 transition-transform"
+                                  title="Drag to adjust width"
+                                >
+                                  <GripVertical className="h-2 w-2 text-white" />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
 
@@ -989,8 +1040,21 @@ export default function Canvas({
                         )}
 
                         {block.type === 'spacer' && (
-                          <div style={{ height: `${block.properties?.height || 30}px` }} className="w-full border border-dashed border-slate-300/30 flex items-center justify-center">
+                          <div 
+                            style={{ height: `${block.properties?.height || 30}px` }} 
+                            className="w-full border border-dashed border-slate-300/30 flex items-center justify-center relative group/spacer"
+                          >
                             <span className="text-[9px] font-mono text-slate-300 select-none">Spacer: {block.properties?.height || 30}px</span>
+                            {/* Height Resize Handle for Spacer */}
+                            {!block.locked && isSelected && !isFigmaAbsolute && (
+                              <div 
+                                onMouseDown={(e) => handleResizeMouseDown(e, block)}
+                                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-3 bg-blue-600 rounded-full cursor-ns-resize flex items-center justify-center shadow-lg border border-white z-20 hover:scale-110 transition-transform rotate-90"
+                                title="Drag to adjust height"
+                              >
+                                <GripVertical className="h-2 w-2 text-white" />
+                              </div>
+                            )}
                           </div>
                         )}
 

@@ -144,6 +144,11 @@ export interface GlobalSettings {
   fontFamily: string; // Global font family choice
   borderRadius: number; // Frame corner rounding
   layoutMode?: 'flow' | 'figma'; // Layout Mode: 'flow' (classic stack) or 'figma' (absolute position)
+  brandColors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
 }
 
 export interface EmailTemplate {

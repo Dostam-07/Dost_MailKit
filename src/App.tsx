@@ -369,6 +369,11 @@ export default function App() {
         contentBg: '#ffffff',
         fontFamily: '"Inter", sans-serif',
         borderRadius: 8,
+        brandColors: {
+          primary: '#3b82f6',
+          secondary: '#6366f1',
+          accent: '#f43f5e',
+        },
       },
       blocks: [
         {

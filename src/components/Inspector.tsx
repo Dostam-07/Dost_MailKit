@@ -381,10 +381,16 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
     onChange: (color: string) => void,
     defaultColor: string = '#ffffff'
   ) => {
+    const brandColors = template.globalSettings.brandColors || {
+      primary: '#3b82f6',
+      secondary: '#6366f1',
+      accent: '#f43f5e',
+    };
+
     const swatches = [
-      '#6366f1', // Dost_MailKit Purple
-      '#f97316', // Dost_MailKit Orange
-      '#3b82f6', // Bright Blue
+      brandColors.primary,
+      brandColors.secondary,
+      brandColors.accent,
       '#ef4444', // Coral Red
       '#10b981', // Emerald Green
       '#111827', // Dark Slate

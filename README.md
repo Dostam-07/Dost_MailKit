@@ -20,25 +20,6 @@ Drag. Drop. Generate. Preview. Export.
 
 ---
 
-## 📸 Screenshots
-
-### 🏠 Home Hub
-The central dashboard where you can manage your recent drafts and browse professional starter templates.
-
-![Home Hub](public/screenshots/home_hub.jpg)
-
-### 🎨 Visual Editor
-A powerful drag-and-drop canvas with real-time editing, component-level controls, and live mobile/desktop previews.
-
-![Visual Editor](public/screenshots/editor_canvas.jpg)
-
-### 🤖 AI-Powered Design
-Generate entire email structures and marketing copy instantly using Gemini AI models.
-
-![AI Features](public/screenshots/ai_features.jpg)
-
----
-
 ## ✨ What is Dost_MailKit?
 
 **Dost_MailKit** is an AI-powered visual email builder designed for marketers, designers, developers, startups, NGOs, and product teams.
@@ -91,8 +72,36 @@ Design emails visually without writing HTML.
 - Images
 - Dividers
 - Columns
+- Multi-column sections
+- Image grids
+- Product cards
+- Hero banners
+- Quote blocks
+- Pricing tables
+- Form embeds
+- Countdown banners
+- Social links
+- Map static previews
+- Rating stars
+- Coupon codes
+- Progress bars
+- Stat blocks
+- Interactive spacers
+- Video thumbnails
 
 Everything updates instantly.
+
+---
+
+## 💎 Brand Identity & Global Settings
+
+Maintain consistency across your entire email campaign.
+
+- **Global Typography**: Choose from a curated list of web-safe, highly-compatible fonts.
+- **Brand Palette**: Define your Primary, Secondary, and Accent colors in Global Settings.
+- **Quick-Apply**: Access your brand colors instantly from any color picker in the Inspector.
+- **Layout Modes**: Switch between **Classic Flow** (perfect for delivery) and **Figma Canvas** (free-form design).
+- **Container Sizing**: Adjust content width and corner rounding globally.
 
 ---
 
@@ -458,12 +467,6 @@ You can help by:
 - Optimizing generated HTML
 - Creating new AI workflows
 - Improving accessibility
-
----
-
-# 📄 License
-
-MIT License
 
 ---
 

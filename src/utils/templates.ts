@@ -13,6 +13,11 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
       contentBg: '#ffffff',
       fontFamily: '"Inter", sans-serif',
       borderRadius: 12,
+      brandColors: {
+        primary: '#3b82f6',
+        secondary: '#6366f1',
+        accent: '#f43f5e',
+      },
     },
     blocks: [
       {
@@ -156,6 +161,11 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
       contentBg: '#f8fafc',
       fontFamily: '"Space Grotesk", sans-serif',
       borderRadius: 8,
+      brandColors: {
+        primary: '#0f172a',
+        secondary: '#475569',
+        accent: '#3b82f6',
+      },
     },
     blocks: [
       {
@@ -280,6 +290,11 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
       contentBg: '#111827',
       fontFamily: '"Outfit", "Inter", sans-serif',
       borderRadius: 16,
+      brandColors: {
+        primary: '#f59e0b',
+        secondary: '#d97706',
+        accent: '#ffffff',
+      },
     },
     blocks: [
       {

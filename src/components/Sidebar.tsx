@@ -211,6 +211,24 @@ export default function Sidebar({
     });
   };
 
+  const updateBrandColor = (colorKey: 'primary' | 'secondary' | 'accent', value: string) => {
+    const defaultBrandColors = {
+      primary: '#3b82f6',
+      secondary: '#6366f1',
+      accent: '#f43f5e',
+    };
+
+    onUpdateTemplate({
+      globalSettings: {
+        ...template.globalSettings,
+        brandColors: {
+          ...(template.globalSettings.brandColors || defaultBrandColors),
+          [colorKey]: value
+        }
+      }
+    });
+  };
+
   return (
     <div id="editor-sidebar" className="w-full lg:w-80 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden shadow-xs select-none">
       {/* Sidebar Tabs - Bento Style Tab Selection bar */}
@@ -419,6 +437,41 @@ export default function Sidebar({
                   onChange={(e) => onUpdateTemplate({ subtitle: e.target.value })}
                   placeholder="Teaser paragraph shown in inboxes..."
                   className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-slate-800 dark:text-slate-100 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Brand Identity & Colors</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Quick-apply palette for blocks and buttons.</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800">
+              <div className="flex flex-col items-center gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Primary</label>
+                <input
+                  type="color"
+                  value={template.globalSettings.brandColors?.primary || '#3b82f6'}
+                  onChange={(e) => updateBrandColor('primary', e.target.value)}
+                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Secondary</label>
+                <input
+                  type="color"
+                  value={template.globalSettings.brandColors?.secondary || '#6366f1'}
+                  onChange={(e) => updateBrandColor('secondary', e.target.value)}
+                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Accent</label>
+                <input
+                  type="color"
+                  value={template.globalSettings.brandColors?.accent || '#f43f5e'}
+                  onChange={(e) => updateBrandColor('accent', e.target.value)}
+                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
                 />
               </div>
             </div>
@@ -638,6 +691,11 @@ export default function Sidebar({
                     contentBg: '#ffffff',
                     fontFamily: '"Inter", sans-serif',
                     borderRadius: 8,
+                    brandColors: {
+                      primary: '#3b82f6',
+                      secondary: '#6366f1',
+                      accent: '#f43f5e',
+                    },
                   },
                   blocks: [
                     {
