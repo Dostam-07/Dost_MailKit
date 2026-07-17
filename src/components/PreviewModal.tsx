@@ -388,38 +388,71 @@ export default function PreviewModal({ isOpen, onClose, template }: PreviewModal
               <div className="flex-1 flex flex-col overflow-hidden p-6 items-center justify-start">
                 
                 {/* Inbox header simulator (Subject line, Sender details, etc.) */}
-                <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm shrink-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-sm border border-blue-200/30">
-                        D
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-800">Dost_MailKit Campaigns</span>
-                          <span className="text-[10px] text-slate-400 font-mono font-medium">&lt;campaigns@dostmailkit.io&gt;</span>
+                <div className="w-full max-w-4xl flex items-center justify-between mb-4">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 mr-4 shrink-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-sm border border-blue-200/30">
+                          D
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                          To: <span className="text-slate-600">subscriber@recipient-inbox.com</span>
-                        </div>
-                        <div className="mt-2 flex items-baseline gap-1.5">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Subject</span>
-                          <h4 className="text-xs font-bold text-slate-800 leading-snug">{template.subject || '[No Subject Line Specified]'}</h4>
-                        </div>
-                        {template.subtitle && (
-                          <div className="mt-1 flex items-baseline gap-1.5">
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Preheader</span>
-                            <p className="text-[10px] text-slate-400 leading-none italic font-medium">{template.subtitle}</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-800">Dost_MailKit Campaigns</span>
+                            <span className="text-[10px] text-slate-400 font-mono font-medium">&lt;campaigns@dostmailkit.io&gt;</span>
                           </div>
-                        )}
+                          <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                            To: <span className="text-slate-600">subscriber@recipient-inbox.com</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold font-mono uppercase">
+                          <Clock className="h-3 w-3" />
+                          <span>Just now</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold font-mono uppercase">
-                        <Clock className="h-3 w-3" />
-                        <span>Just now</span>
-                      </div>
+                  </div>
+
+                  {/* Device Switcher Toggle */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-1.5 flex gap-1 shadow-sm shrink-0">
+                    <button
+                      onClick={() => setIsMobileFrame(false)}
+                      className={`p-2 rounded-xl transition-all ${
+                        !isMobileFrame 
+                          ? 'bg-blue-600 text-white shadow-sm' 
+                          : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                      }`}
+                      title="Desktop View"
+                    >
+                      <Monitor className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setIsMobileFrame(true)}
+                      className={`p-2 rounded-xl transition-all ${
+                        isMobileFrame 
+                          ? 'bg-blue-600 text-white shadow-sm' 
+                          : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                      }`}
+                      title="Mobile View"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm shrink-0">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Subject</span>
+                      <h4 className="text-xs font-bold text-slate-800 leading-snug">{template.subject || '[No Subject Line Specified]'}</h4>
                     </div>
+                    {template.subtitle && (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Preheader</span>
+                        <p className="text-[10px] text-slate-400 leading-none italic font-medium">{template.subtitle}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

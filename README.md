@@ -25,23 +25,17 @@ Drag. Drop. Generate. Preview. Export.
 ### 🏠 Home Hub
 The central dashboard where you can manage your recent drafts and browse professional starter templates.
 
-<p align="center">
-  <img src="public/screenshots/home_hub.jpg" alt="Home Hub" width="800"/>
-</p>
+![Home Hub](public/screenshots/home_hub.jpg)
 
 ### 🎨 Visual Editor
 A powerful drag-and-drop canvas with real-time editing, component-level controls, and live mobile/desktop previews.
 
-<p align="center">
-  <img src="public/screenshots/editor_canvas.jpg" alt="Visual Editor" width="800"/>
-</p>
+![Visual Editor](public/screenshots/editor_canvas.jpg)
 
 ### 🤖 AI-Powered Design
 Generate entire email structures and marketing copy instantly using Gemini AI models.
 
-<p align="center">
-  <img src="public/screenshots/ai_features.jpg" alt="AI Features" width="800"/>
-</p>
+![AI Features](public/screenshots/ai_features.jpg)
 
 ---
 
