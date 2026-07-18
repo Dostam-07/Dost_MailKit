@@ -396,4 +396,101 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
       },
     ],
   },
+  {
+    id: 'ink-gold-premium',
+    name: '🖋️ Ink & Gold Premium',
+    subject: 'A New Standard of Excellence has Arrived',
+    subtitle: 'Step into the world of luxury design and curated essentials.',
+    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400',
+    globalSettings: {
+      backgroundColor: '#0a0a0a',
+      contentWidth: 600,
+      contentBg: '#121212',
+      fontFamily: '"Inter", sans-serif',
+      borderRadius: 12,
+      brandColors: {
+        primary: '#d4af37',
+        secondary: '#1a1a1a',
+        accent: '#ffffff',
+      },
+    },
+    blocks: [
+      {
+        id: 'ig-navbar',
+        type: 'navbar',
+        content: 'PREMIUM STUDIO',
+        properties: {
+          socialLinks: [
+            { platform: 'SHOP', url: '#' },
+            { platform: 'STORY', url: '#' },
+            { platform: 'CONTACT', url: '#' }
+          ]
+        },
+        style: { paddingTop: 20, paddingBottom: 20, paddingLeft: 20, paddingRight: 20 }
+      },
+      {
+        id: 'ig-hero',
+        type: 'hero',
+        content: 'THE ART OF MINIMALISM',
+        properties: {
+          src: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1000',
+          overlayPosition: 'center',
+          overlayScrim: 'rgba(26, 26, 26, 0.65)',
+          badge: 'NEW COLLECTION',
+          price: 'Starting from $299',
+          href: '#'
+        },
+        style: { paddingTop: 0, paddingBottom: 0 }
+      },
+      {
+        id: 'ig-header',
+        type: 'header',
+        content: 'Curated for the Discerning',
+        style: { color: '#d4af37', textAlign: 'center', fontSize: '28px', fontWeight: 'bold', paddingTop: 40, paddingBottom: 10 }
+      },
+      {
+        id: 'ig-text',
+        type: 'text',
+        content: '<p style="text-align: center;">Our latest release focuses on the intersection of form and function. Each piece is meticulously designed to provide a seamless experience that transcends time.</p>',
+        style: { color: '#e5e7eb', textAlign: 'center', fontSize: '15px', lineHeight: '1.7', paddingTop: 5, paddingBottom: 30, paddingLeft: 40, paddingRight: 40 }
+      },
+      {
+        id: 'ig-grid',
+        type: 'imageGrid',
+        properties: {
+          images: [
+            { src: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', alt: 'Watch' },
+            { src: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', alt: 'Headphones' },
+            { src: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400', alt: 'Glass' }
+          ]
+        },
+        style: { paddingTop: 10, paddingBottom: 30, paddingLeft: 20, paddingRight: 20 }
+      },
+      {
+        id: 'ig-quote',
+        type: 'quote',
+        content: 'Simplicity is the ultimate sophistication.',
+        properties: { author: 'Leonardo da Vinci' },
+        style: { paddingTop: 30, paddingBottom: 30, paddingLeft: 40, paddingRight: 40, color: '#e5e7eb' }
+      },
+      {
+        id: 'ig-btn',
+        type: 'button',
+        content: 'Explore the Catalog',
+        properties: { href: '#' },
+        style: { backgroundColor: '#d4af37', color: '#121212', textAlign: 'center', borderRadius: 8, fontSize: '15px', fontWeight: 'bold', paddingTop: 16, paddingBottom: 16, paddingLeft: 60, paddingRight: 60 }
+      },
+      {
+        id: 'ig-divider',
+        type: 'divider',
+        style: { borderColor: 'rgba(212, 175, 55, 0.2)', borderWidth: 1, borderStyle: 'solid', paddingTop: 40, paddingBottom: 40, paddingLeft: 20, paddingRight: 20 }
+      },
+      {
+        id: 'ig-footer',
+        type: 'footer',
+        content: '© 2026 PREMIUM STUDIO. Crafted for Excellence.<br/>Paris • New York • Tokyo<br/><a href="#" style="color: #d4af37; text-decoration: underline;">Unsubscribe</a>',
+        style: { color: '#9ca3af', textAlign: 'center', fontSize: '11px', lineHeight: '1.6', paddingTop: 0, paddingBottom: 40 }
+      },
+    ]
+  }
 ];

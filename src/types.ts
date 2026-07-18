@@ -16,17 +16,10 @@ export type BlockType =
   | 'navbar'       // NEW: horizontal logo + text link row
   | 'htmlEmbed'    // NEW: raw HTML passthrough for power users
   | 'productLoop'  // NEW: repeating product loop feed
-  | 'pricingTable'
-  | 'formEmbed'
-  | 'videoThumbnail'
-  | 'ratingStars'
-  | 'couponCode'
-  | 'appStoreBadges'
-  | 'mapStatic'
-  | 'tableData'
-  | 'progressBar'
-  | 'statBlock'
-  | 'dividerDecorative';
+  | 'shape'
+  | 'icon'
+  | 'sticker'
+  | 'line';
 
 export interface BrandKit {
   id: string;
@@ -48,7 +41,7 @@ export interface BrandKit {
     icon?: string;
     wordmark?: string;
   };
-  buttonStyles: any[]; // Saved button presets
+  buttonStyles: ButtonPreset[]; // Saved button presets
   spacingScale?: number[];
 }
 
@@ -102,6 +95,7 @@ export interface BlockStyle {
   width?: string;
   height?: string;
   zIndex?: number;
+  opacity?: number;
   constraints?: {
     horizontal?: 'left' | 'right' | 'center' | 'stretch';
     vertical?: 'top' | 'bottom' | 'center' | 'stretch';
@@ -114,6 +108,7 @@ export interface EmailBlock {
   content?: string; // text/html content
   style: BlockStyle;
   locked?: boolean;
+  visible?: boolean;
   groupId?: string;          // for canvas grouping (4.1)
   symbolId?: string;         // instance reference (4.5)
   rotation?: number;         // canvas transform (4.1)
@@ -134,6 +129,7 @@ export interface EmailBlock {
     columnWidths?: number[];         // Percentage splits, e.g. [50, 50]
     columnGap?: number;              // Gap between columns
     stackOnMobile?: boolean;         // Default true
+    sectionLayoutMode?: 'flow' | 'figma'; // For free canvas per section
     images?: { src: string; alt: string; href?: string }[]; // For imageGrid
     gridCols?: number;               // For imageGrid (number of columns)
     gridRows?: number;               // For imageGrid (number of rows)
@@ -147,6 +143,15 @@ export interface EmailBlock {
     dataSource?: string;             // For productLoop
     limit?: number;                  // For productLoop
     items?: Array<{ name: string; price: string; src: string; href?: string }>; // For productLoop
+    shape?: 'rect' | 'circle' | 'triangle' | 'diamond' | 'star';
+    svg?: string;
+    blocks?: EmailBlock[];           // NEW: for nested blocks in shapes or columns
+    filterGrayscale?: number;
+    filterSepia?: number;
+    filterContrast?: number;
+    filterBrightness?: number;
+    aspectRatio?: string;
+    hoverScale?: boolean;
   };
 }
 
@@ -213,6 +218,7 @@ export interface MediaAsset {
 export interface EmailTemplate {
   id: string;
   name: string;
+  description?: string;
   subject: string;
   subtitle: string;
   thumbnail?: string;
@@ -234,4 +240,10 @@ export interface EmailTemplate {
 export interface UndoRedoState {
   past: EmailTemplate[];
   future: EmailTemplate[];
+}
+
+export interface ButtonPreset {
+  id: string;
+  name: string;
+  style: Pick<BlockStyle, 'backgroundColor' | 'color' | 'borderRadius' | 'fontWeight' | 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight' | 'borderColor' | 'borderWidth'>;
 }

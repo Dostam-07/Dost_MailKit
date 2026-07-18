@@ -403,17 +403,32 @@ app.post('/api/gemini/generate-image', async (req, res) => {
   try {
     console.log(`Generating image for prompt: "${prompt}"`);
     // Call the correct, officially supported Image Generation model
-    const response = await ai.models.generateImages({
-      model: 'imagen-3.0-generate-002',
-      prompt: `Create a clean, highly professional, modern graphic or illustration suitable as an email template image banner: "${prompt}". Minimalist aesthetic, beautiful matching colors, high contrast. No text, no frames, pure vector/graphic representation.`,
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-image',
+      contents: {
+        parts: [
+          {
+            text: `Create a clean, highly professional, modern graphic or illustration suitable as an email template image banner: "${prompt}". Minimalist aesthetic, beautiful matching colors, high contrast. No text, no frames, pure vector/graphic representation.`,
+          },
+        ],
+      },
       config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/png',
-        aspectRatio: '16:9'
+        imageConfig: {
+          aspectRatio: '16:9'
+        }
       }
     });
 
-    const base64Image = response.generatedImages?.[0]?.image?.imageBytes;
+    let base64Image: string | undefined;
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          base64Image = part.inlineData.data;
+          break;
+        }
+      }
+    }
+
     if (base64Image) {
       const mimeType = 'image/png';
       const dataUrl = `data:${mimeType};base64,${base64Image}`;

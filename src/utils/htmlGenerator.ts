@@ -1,4 +1,5 @@
 import { EmailTemplate, EmailBlock, BlockStyle } from '../types';
+import { THEME_PRESETS } from './themes';
 
 const replaceVariables = (text: string, variables?: Record<string, string>): string => {
   if (!text) return '';
@@ -60,6 +61,52 @@ export function generateHTML(template: EmailTemplate): string {
   const { backgroundColor, contentWidth, contentBg, fontFamily, borderRadius } = globalSettings;
   const fontValue = fontFamily || 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
+  const getSharedBlocks = (): any[] => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const data = window.localStorage.getItem('easy-email-shared-blocks');
+        return data ? JSON.parse(data) : [];
+      }
+    } catch (e) {
+      // ignore
+    }
+    return [];
+  };
+
+  const sharedBlocks = getSharedBlocks();
+  const activeTheme = THEME_PRESETS.find(t => t.id === template.themeId) || THEME_PRESETS[0];
+
+  const resolvedBlocks = blocks.map(block => {
+    let resolved = { ...block };
+    if (block.symbolId) {
+      const shared = sharedBlocks.find((sb: any) => sb.id === block.symbolId);
+      if (shared) {
+        resolved = {
+          ...block,
+          content: shared.block.content,
+          properties: { ...shared.block.properties },
+          style: { ...shared.block.style }
+        };
+      }
+    }
+
+    // Fallback un-overridden styles to the active theme
+    const mergedStyle: BlockStyle = {
+      ...resolved.style,
+      color: resolved.style.color || activeTheme.colors.text,
+      fontFamily: resolved.style.fontFamily || activeTheme.typography.bodyFont,
+    };
+
+    if (resolved.type === 'button' && !resolved.style.backgroundColor) {
+      mergedStyle.backgroundColor = activeTheme.colors.primary;
+    }
+
+    return {
+      ...resolved,
+      style: mergedStyle
+    };
+  });
+
   const renderBlockHTML = (block: EmailBlock): string => {
     const blockBg = block.style.backgroundColor || 'transparent';
     const inlineStyles = getInlineStyles(block.style);
@@ -87,6 +134,10 @@ export function generateHTML(template: EmailTemplate): string {
         break;
       }
 
+      case 'shape':
+      case 'icon':
+      case 'sticker':
+      case 'line':
       case 'image': {
         const src = block.properties?.src || 'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?w=600&auto=format&fit=crop&q=80';
         const alt = block.properties?.alt || 'Image';
@@ -408,6 +459,68 @@ export function generateHTML(template: EmailTemplate): string {
         break;
       }
 
+      case 'productLoop': {
+        const items = block.properties?.items || [];
+        const limit = block.properties?.limit || 3;
+        const visibleItems = items.slice(0, limit);
+        const cols = 3;
+        const colWidth = 100 / cols;
+        const cellPadding = 6;
+
+        blockHtml += `
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        `;
+
+        for (let r = 0; r < visibleItems.length; r += cols) {
+          const rowItems = visibleItems.slice(r, r + cols);
+          blockHtml += `
+                      <tr>
+          `;
+          rowItems.forEach((item: any) => {
+            const itemSrc = item.src || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';
+            const itemName = item.name || 'Product Name';
+            const itemPrice = item.price || '$0.00';
+            blockHtml += `
+                        <td valign="top" width="${colWidth}%" style="padding: ${cellPadding}px;">
+                          <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <img src="${itemSrc}" alt="${itemName}" style="width: 100%; max-height: 120px; object-fit: cover; display: block; border-radius: 8px; margin-bottom: 8px;" />
+                            <h4 style="margin: 0 0 4px 0; font-family: ${fontValue}; font-size: 13px; font-weight: bold; color: #1e293b; line-height: 1.3;">${itemName}</h4>
+                            <span style="display: block; font-family: ${fontValue}; font-size: 13px; font-weight: 800; color: #7c3aed; margin-bottom: 8px;">${itemPrice}</span>
+                            <div style="background-color: #7c3aed; color: #ffffff; font-family: ${fontValue}; font-size: 11px; font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block;">Buy Now</div>
+                          </div>
+                        </td>
+            `;
+          });
+          // Pad row if not full
+          if (rowItems.length < cols) {
+            const padCount = cols - rowItems.length;
+            for (let p = 0; p < padCount; p++) {
+              blockHtml += `
+                        <td width="${colWidth}%" style="padding: ${cellPadding}px;"></td>
+              `;
+            }
+          }
+          blockHtml += `
+                      </tr>
+          `;
+        }
+
+        if (visibleItems.length === 0) {
+          blockHtml += `
+                      <tr>
+                        <td align="center" style="padding: 20px; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                          No products found in this feed.
+                        </td>
+                      </tr>
+          `;
+        }
+
+        blockHtml += `
+                    </table>
+        `;
+        break;
+      }
+
       default:
         break;
     }
@@ -417,6 +530,20 @@ export function generateHTML(template: EmailTemplate): string {
                 </tr>
               </table>
     `;
+
+    if (block.visibilityCondition) {
+      const { field, operator, value } = block.visibilityCondition;
+      let cond = '';
+      if (operator === 'exists') {
+        cond = field;
+      } else if (operator === 'equals') {
+        cond = `${field} == "${value || ''}"`;
+      } else {
+        cond = `${field} != "${value || ''}"`;
+      }
+      blockHtml = `{% if ${cond} %}\n${blockHtml}\n{% endif %}`;
+    }
+
     return blockHtml;
   };
 
@@ -483,7 +610,8 @@ export function generateHTML(template: EmailTemplate): string {
             <td valign="top">
 `;
 
-  blocks.forEach((block) => {
+  resolvedBlocks.forEach((block) => {
+    if (block.visible === false) return;
     html += renderBlockHTML(block);
   });
 

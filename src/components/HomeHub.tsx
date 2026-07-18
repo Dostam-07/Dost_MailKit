@@ -20,6 +20,8 @@ import { EmailTemplate } from '../types';
 import AiDesignPrompt from './AiDesignPrompt';
 import TemplateLibraryModal from './TemplateLibraryModal';
 import { STARTER_TEMPLATES } from '../utils/templates';
+import TemplatesGallery from './TemplatesGallery';
+import BrandHub from './BrandHub';
 import Postmark from './Postmark';
 
 interface HomeHubProps {
@@ -40,6 +42,7 @@ export default function HomeHub({
   onToggleTheme
 }: HomeHubProps) {
 
+  const [activeTab, setActiveTab] = useState<'projects' | 'templates' | 'brands'>('projects');
   const [isAiPromptOpen, setIsAiPromptOpen] = useState(false);
   const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] = useState(false);
 
@@ -72,24 +75,23 @@ export default function HomeHub({
 
           {/* Center-Right Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-[0.15em] text-text-on-ink-muted">
-            <a href="#drafts-section" className="hover:text-text-on-ink hover:underline decoration-gold decoration-2 underline-offset-4 transition-all">
-              Studio Canvas
-            </a>
-            <a href="#starters-section" className="hover:text-text-on-ink hover:underline decoration-gold decoration-2 underline-offset-4 transition-all">
-              Starters
-            </a>
             <button 
-              onClick={() => setIsTemplateLibraryOpen(true)}
-              className="hover:text-text-on-ink hover:underline decoration-gold decoration-2 underline-offset-4 transition-all cursor-pointer uppercase text-xs font-semibold tracking-[0.15em]"
+              onClick={() => setActiveTab('projects')} 
+              className={`transition-all hover:text-text-on-ink ${activeTab === 'projects' ? 'text-text-on-ink underline decoration-gold decoration-2 underline-offset-4' : ''}`}
             >
-              Gallery Library
+              My Projects
             </button>
             <button 
-              onClick={() => setIsAiPromptOpen(true)}
-              className="flex items-center gap-1.5 text-gold hover:text-gold/80 transition-all cursor-pointer font-bold"
+              onClick={() => setActiveTab('templates')} 
+              className={`transition-all hover:text-text-on-ink ${activeTab === 'templates' ? 'text-text-on-ink underline decoration-gold decoration-2 underline-offset-4' : ''}`}
             >
-              <Sparkles className="h-3 w-3" />
-              AI Studio
+              Templates
+            </button>
+            <button 
+              onClick={() => setActiveTab('brands')} 
+              className={`transition-all hover:text-text-on-ink ${activeTab === 'brands' ? 'text-text-on-ink underline decoration-gold decoration-2 underline-offset-4' : ''}`}
+            >
+              Brand Hub
             </button>
           </nav>
 
@@ -105,9 +107,6 @@ export default function HomeHub({
               ) : (
                 <Sun className="h-4 w-4 text-gold" />
               )}
-            </button>
-            <button className="px-4 py-1.5 rounded-lg border border-text-on-ink-muted/30 text-xs font-semibold tracking-wider text-text-on-ink hover:border-gold hover:text-gold transition-all cursor-pointer">
-              Sign in
             </button>
           </div>
         </div>

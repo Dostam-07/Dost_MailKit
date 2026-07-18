@@ -1,4 +1,5 @@
 import { EmailTemplate, EmailBlock, BlockStyle } from '../types';
+import { THEME_PRESETS } from './themes';
 
 function getPaddingStyle(style: BlockStyle) {
   const top = style.paddingTop !== undefined ? `${style.paddingTop}px` : '10px';
@@ -21,6 +22,52 @@ function escapeHtml(text?: string): string {
 export function generateMJML(template: EmailTemplate): string {
   const { subject, subtitle, globalSettings, blocks } = template;
   const { backgroundColor, contentWidth, contentBg, fontFamily, borderRadius } = globalSettings;
+
+  const getSharedBlocks = (): any[] => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const data = window.localStorage.getItem('easy-email-shared-blocks');
+        return data ? JSON.parse(data) : [];
+      }
+    } catch (e) {
+      // ignore
+    }
+    return [];
+  };
+
+  const sharedBlocks = getSharedBlocks();
+  const activeTheme = THEME_PRESETS.find(t => t.id === template.themeId) || THEME_PRESETS[0];
+
+  const resolvedBlocks = blocks.map(block => {
+    let resolved = { ...block };
+    if (block.symbolId) {
+      const shared = sharedBlocks.find((sb: any) => sb.id === block.symbolId);
+      if (shared) {
+        resolved = {
+          ...block,
+          content: shared.block.content,
+          properties: { ...shared.block.properties },
+          style: { ...shared.block.style }
+        };
+      }
+    }
+
+    // Fallback un-overridden styles to the active theme
+    const mergedStyle: BlockStyle = {
+      ...resolved.style,
+      color: resolved.style.color || activeTheme.colors.text,
+      fontFamily: resolved.style.fontFamily || activeTheme.typography.bodyFont,
+    };
+
+    if (resolved.type === 'button' && !resolved.style.backgroundColor) {
+      mergedStyle.backgroundColor = activeTheme.colors.primary;
+    }
+
+    return {
+      ...resolved,
+      style: mergedStyle
+    };
+  });
 
   const renderBlockMJML = (block: EmailBlock): string => {
     let blockBg = block.style.backgroundColor || 'transparent';
@@ -72,6 +119,10 @@ export function generateMJML(template: EmailTemplate): string {
         break;
       }
 
+      case 'shape':
+      case 'icon':
+      case 'sticker':
+      case 'line':
       case 'image': {
         const src = block.properties?.src || 'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?w=600&auto=format&fit=crop&q=80';
         const alt = block.properties?.alt || 'Image';
@@ -349,8 +400,57 @@ export function generateMJML(template: EmailTemplate): string {
         break;
       }
 
+      case 'productLoop': {
+        const items = block.properties?.items || [];
+        const limit = block.properties?.limit || 3;
+        const visibleItems = items.slice(0, limit);
+        const cols = 3;
+        const colWidth = `${100 / cols}%`;
+
+        mjmlBlock += `
+      <mj-section background-color="${blockBg}" ${gradientStr} padding="10px">`;
+
+        visibleItems.forEach((item: any) => {
+          const itemSrc = item.src || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';
+          const itemName = item.name || 'Product Name';
+          const itemPrice = item.price || '$0.00';
+
+          mjmlBlock += `
+        <mj-column width="${colWidth}" padding="6px">
+          <mj-image src="${itemSrc}" alt="${itemName}" width="150px" border-radius="8px" />
+          <mj-text align="center" font-size="13px" font-weight="bold" padding-bottom="4px">${itemName}</mj-text>
+          <mj-text align="center" font-size="13px" font-weight="800" color="#7c3aed" padding-bottom="8px">${itemPrice}</mj-text>
+          <mj-button background-color="#7c3aed" color="#ffffff" font-size="11px" font-weight="bold" border-radius="6px" height="28px" padding="0px" href="#">Buy Now</mj-button>
+        </mj-column>`;
+        });
+
+        if (visibleItems.length === 0) {
+          mjmlBlock += `
+        <mj-column width="100%">
+          <mj-text align="center" color="#94a3b8">No products found in this feed.</mj-text>
+        </mj-column>`;
+        }
+
+        mjmlBlock += `
+      </mj-section>`;
+        break;
+      }
+
       default:
         break;
+    }
+
+    if (block.visibilityCondition) {
+      const { field, operator, value } = block.visibilityCondition;
+      let cond = '';
+      if (operator === 'exists') {
+        cond = field;
+      } else if (operator === 'equals') {
+        cond = `${field} == "${value || ''}"`;
+      } else {
+        cond = `${field} != "${value || ''}"`;
+      }
+      mjmlBlock = `<mj-raw>{% if ${cond} %}</mj-raw>\n${mjmlBlock}\n<mj-raw>{% endif %}</mj-raw>`;
     }
 
     return mjmlBlock;
@@ -376,7 +476,8 @@ export function generateMJML(template: EmailTemplate): string {
     <mj-wrapper css-class="email-body" background-color="${contentBg || '#ffffff'}" padding="0px">
 `;
 
-  blocks.forEach((block) => {
+  resolvedBlocks.forEach((block) => {
+    if (block.visible === false) return;
     mjml += renderBlockMJML(block);
   });
 

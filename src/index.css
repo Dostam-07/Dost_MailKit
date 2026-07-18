@@ -3,42 +3,56 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-ink: #16233B;
-  --color-ink-2: #1D2E4A;
-  --color-paper: #F1E9D8;
-  --color-paper-2: #E8DEC8;
-  --color-gold: #D9A441;
-  --color-seal: #B8452F;
-  --color-text-on-ink: #F3ECDD;
-  --color-text-on-ink-muted: #B9C0CC;
-  --color-text-on-paper: #16233B;
 
-  /* Map old color properties to help avoid breaking existing styles if any */
-  --color-primary: #16233B;
-  --color-primary-light: #1D2E4A;
-  --color-accent: #D9A441;
-  --color-accent-hover: #c59336;
-  --color-accent-light: #E8DEC8;
+:root {
+  /* UI Surface Colors - Light Mode */
+  --color-ink-val: #16233B;
+  --color-ink-2-val: #1D2E4A;
+  --color-text-on-ink-val: #F1E9D8;
+  --color-text-on-ink-muted-val: #E8DEC8;
+  
+  /* Canvas Surface Colors - Always somewhat paper-like */
+  --color-paper-val: #FFFFFF;
+  --color-paper-2-val: #F8FAFC;
+  --color-text-on-paper-val: #16233B;
+
+  /* Accent Colors */
+  --color-gold-val: #D9A441;
+  --color-gold-hover-val: #C59336;
+  --color-seal-val: #B8452F;
+}
+
+.dark {
+  /* UI Surface Colors - Dark Mode */
+  --color-ink-val: #16233B;
+  --color-ink-2-val: #1D2E4A;
+  --color-text-on-ink-val: #F1E9D8;
+  --color-text-on-ink-muted-val: #E8DEC8;
+
+  /* Canvas Surface Colors - Creamy Paper in Dark Mode for Premium feel */
+  --color-paper-val: #F1E9D8;
+  --color-paper-2-val: #E8DEC8;
+  --color-text-on-paper-val: #16233B;
+}
+
+@theme {
+  --color-ink: var(--color-ink-val);
+  --color-ink-2: var(--color-ink-2-val);
+  --color-text-on-ink: var(--color-text-on-ink-val);
+  --color-text-on-ink-muted: var(--color-text-on-ink-muted-val);
+  
+  --color-paper: var(--color-paper-val);
+  --color-paper-2: var(--color-paper-2-val);
+  --color-text-on-paper: var(--color-text-on-paper-val);
+
+  --color-gold: var(--color-gold-val);
+  --color-gold-hover: var(--color-gold-hover-val);
+  --color-seal: var(--color-seal-val);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
   --font-display: "Fraunces", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-
-  --spacing-0: 0px;
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 20px;
-  --spacing-6: 24px;
-  --spacing-8: 32px;
-  --spacing-10: 40px;
-  --spacing-12: 48px;
-  --spacing-16: 64px;
-  --spacing-20: 80px;
-  --spacing-24: 96px;
 
   --radius-sm: 4px;
   --radius-md: 8px;

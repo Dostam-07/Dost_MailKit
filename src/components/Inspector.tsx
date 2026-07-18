@@ -15,7 +15,9 @@ import {
   BarChart3,
   Clock,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  Image as ImageIcon
 } from 'lucide-react';
 import { EmailBlock, EmailTemplate, SocialLink } from '../types';
 import { calculateMetrics } from '../utils/metrics';
@@ -139,19 +141,21 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
   if (!selectedBlock) {
     return (
       <div className="w-80 flex flex-col gap-4 shrink-0 select-none">
-        <div id="inspector-empty-state" className="rounded border border-ink-2 bg-ink-2/10 flex flex-col justify-center items-center p-6 text-center select-none">
-          <Sliders className="h-10 w-10 text-gold mb-3" />
-          <h3 className="text-sm font-serif font-bold text-paper">No Element Selected</h3>
-          <p className="text-xs text-text-on-ink-muted mt-1.5 max-w-[200px] leading-relaxed">
+        <div id="inspector-empty-state" className="rounded-xl border border-ink-2 bg-ink-2/10 flex flex-col justify-center items-center p-6 text-center select-none shadow-sm">
+          <div className="p-3 bg-gold/10 rounded-full mb-3">
+            <Sliders className="h-8 w-8 text-gold" />
+          </div>
+          <h3 className="text-sm font-serif font-bold text-text-on-ink">No Element Selected</h3>
+          <p className="text-[11px] text-text-on-ink-muted mt-1.5 max-w-[200px] leading-relaxed">
             Click on any text, button, or image section inside the canvas to edit its properties, margins, or URLs.
           </p>
         </div>
 
         {/* Template Fallback Variables Card */}
-        <div className="rounded border border-ink-2 bg-ink-2/15 p-5 flex flex-col">
+        <div className="rounded-xl border border-ink-2 bg-ink-2/15 p-5 flex flex-col shadow-sm">
           <div className="flex items-center gap-2 mb-3 border-b border-ink-2/40 pb-2.5">
             <TypeIcon className="h-4 w-4 text-gold" />
-            <h4 className="text-[11px] font-mono font-bold text-gold uppercase tracking-wider">
+            <h4 className="text-[11px] font-mono font-black text-gold uppercase tracking-widest">
               Template Variables
             </h4>
           </div>
@@ -161,17 +165,17 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           </p>
 
           {/* List of active variables */}
-          <div className="space-y-1.5 max-h-40 overflow-y-auto mb-3 pr-1">
+          <div className="space-y-1.5 max-h-40 overflow-y-auto mb-3 pr-1 custom-scrollbar">
             {Object.keys(template.variables || {}).length === 0 ? (
-              <span className="text-[11px] text-text-on-ink-muted/70 italic block text-center py-2 bg-ink rounded">
+              <span className="text-[11px] text-text-on-ink-muted/70 italic block text-center py-4 bg-ink/40 rounded-lg border border-ink-2/20">
                 No variables defined yet.
               </span>
             ) : (
               Object.entries(template.variables || {}).map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between gap-1.5 bg-ink px-2.5 py-1.5 rounded border border-ink-2/60">
+                <div key={key} className="flex items-center justify-between gap-1.5 bg-ink px-3 py-2 rounded-lg border border-ink-2/60 shadow-xs">
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[10px] font-mono font-bold text-gold truncate">{"{{" + key + "}}"}</span>
-                    <span className="text-[11px] text-text-on-ink-muted font-bold truncate">{val}</span>
+                    <span className="text-[10px] font-mono font-bold text-gold truncate tracking-wider">{"{{" + key + "}}"}</span>
+                    <span className="text-[11px] text-text-on-ink font-bold truncate mt-0.5">{val}</span>
                   </div>
                   <button
                     id={`btn-del-var-${key}`}
@@ -180,7 +184,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       delete updatedVars[key];
                       onUpdateTemplate({ variables: updatedVars });
                     }}
-                    className="p-1 rounded text-text-on-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-md text-text-on-ink-muted hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                     title="Delete Variable"
                   >
                     <Trash className="h-3.5 w-3.5" />
@@ -191,24 +195,24 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           </div>
 
           {/* Add Variable Form */}
-          <div className="border-t border-ink-2/40 pt-3 flex flex-col gap-2">
-            <span className="text-[10px] font-mono font-bold text-gold/80 uppercase tracking-wider">Add Placeholder Variable</span>
-            <div className="grid grid-cols-2 gap-1.5">
+          <div className="border-t border-ink-2/40 pt-4 flex flex-col gap-2.5">
+            <span className="text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest">Add Placeholder Variable</span>
+            <div className="grid grid-cols-2 gap-2">
               <input
                 id="input-new-var-key"
                 type="text"
-                placeholder="key (e.g. name)"
+                placeholder="Key"
                 value={newVarKey}
                 onChange={(e) => setNewVarKey(e.target.value.trim().replace(/[{}]/g, ''))}
-                className="text-[11px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink focus:border-gold outline-none font-mono text-text-on-ink"
+                className="text-[11px] px-3 py-2 border border-ink-2/80 rounded-lg bg-ink focus:border-gold outline-none font-mono text-text-on-ink placeholder:text-text-on-ink-muted/40"
               />
               <input
                 id="input-new-var-val"
                 type="text"
-                placeholder="default value"
+                placeholder="Value"
                 value={newVarVal}
                 onChange={(e) => setNewVarVal(e.target.value)}
-                className="text-[11px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink focus:border-gold outline-none text-text-on-ink"
+                className="text-[11px] px-3 py-2 border border-ink-2/80 rounded-lg bg-ink focus:border-gold outline-none text-text-on-ink placeholder:text-text-on-ink-muted/40"
               />
             </div>
             <button
@@ -221,7 +225,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 setNewVarVal('');
               }}
               disabled={!newVarKey}
-              className="py-1.5 px-3 bg-gold hover:bg-gold/90 disabled:opacity-35 text-ink rounded font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+              className="py-2 px-3 bg-gold hover:bg-gold/90 disabled:opacity-35 text-ink rounded-lg font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <Plus className="h-3.5 w-3.5" />
               Add Variable
@@ -230,37 +234,37 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         </div>
 
         {/* Global Email Metrics Status Card */}
-        <div className="rounded border border-ink-2 bg-ink-2/15 p-5">
-          <div className="flex items-center gap-2 mb-3.5 border-b border-ink-2/40 pb-2.5">
+        <div className="rounded-xl border border-ink-2 bg-ink-2/15 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4 border-b border-ink-2/40 pb-2.5">
             <BarChart3 className="h-4 w-4 text-gold" />
-            <h4 className="text-[11px] font-mono font-bold text-gold uppercase tracking-wider">
-              Email Stats & Metrics
+            <h4 className="text-[11px] font-mono font-black text-gold uppercase tracking-widest">
+              Email Health Metrics
             </h4>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="bg-ink p-2.5 rounded border border-ink-2">
-              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Total Characters</span>
-              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-ink/60 p-3 rounded-lg border border-ink-2/50">
+              <span className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase block tracking-wider">Characters</span>
+              <span className="text-sm font-bold font-mono text-text-on-ink leading-none block mt-1.5">
                 {metrics.characterCount}
               </span>
             </div>
-            <div className="bg-ink p-2.5 rounded border border-ink-2">
-              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Image Elements</span>
-              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
+            <div className="bg-ink/60 p-3 rounded-lg border border-ink-2/50">
+              <span className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase block tracking-wider">Images</span>
+              <span className="text-sm font-bold font-mono text-text-on-ink leading-none block mt-1.5">
                 {metrics.imageCount}
               </span>
             </div>
-            <div className="bg-ink p-2.5 rounded border border-ink-2">
-              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Total Words</span>
-              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
+            <div className="bg-ink/60 p-3 rounded-lg border border-ink-2/50">
+              <span className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase block tracking-wider">Words</span>
+              <span className="text-sm font-bold font-mono text-text-on-ink leading-none block mt-1.5">
                 {metrics.wordCount}
               </span>
             </div>
-            <div className="bg-ink p-2.5 rounded border border-ink-2">
-              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Est. Read Time</span>
-              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1 flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-text-on-ink-muted shrink-0" />
+            <div className="bg-ink/60 p-3 rounded-lg border border-ink-2/50">
+              <span className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase block tracking-wider">Read Time</span>
+              <span className="text-sm font-bold font-mono text-text-on-ink leading-none block mt-1.5 flex items-center gap-1.5">
+                <Clock className="h-3 w-3 text-text-on-ink-muted shrink-0" />
                 {metrics.readingTimeStr}
               </span>
             </div>
@@ -315,14 +319,23 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
   };
 
   // Base64 Image upload handler for local browser testing
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index?: number, arrayKey?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
-      updateProperty('src', base64);
+      if (index !== undefined && arrayKey) {
+        const arr = [...(properties[arrayKey] || [])];
+        if (arr[index]) {
+          arr[index] = { ...arr[index], src: base64 };
+          updateProperty(arrayKey, arr);
+        }
+      } else {
+        updateProperty('src', base64);
+        if (type === 'icon') updateProperty('svg', '');
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -337,7 +350,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, index?: number, arrayKey?: string) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
@@ -346,7 +359,16 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
-      updateProperty('src', base64);
+      if (index !== undefined && arrayKey) {
+        const arr = [...(properties[arrayKey] || [])];
+        if (arr[index]) {
+          arr[index] = { ...arr[index], src: base64 };
+          updateProperty(arrayKey, arr);
+        }
+      } else {
+        updateProperty('src', base64);
+        if (type === 'icon') updateProperty('svg', '');
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -388,12 +410,10 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
     };
 
     const swatches = [
-      brandColors.primary,
-      brandColors.secondary,
-      brandColors.accent,
-      '#ef4444', // Coral Red
-      '#10b981', // Emerald Green
-      '#111827', // Dark Slate
+      template.globalSettings.brandColors?.primary || '#D9A441',
+      '#16233B', // Ink
+      '#B8452F', // Seal
+      '#F1E9D8', // Paper
       '#ffffff', // White
     ];
 
@@ -461,7 +481,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         <div className="h-14 flex items-center px-4 justify-between">
           <div className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-gold" />
-            <h3 className="text-xs font-mono font-bold text-paper uppercase tracking-wider">
+            <h3 className="text-xs font-mono font-bold text-text-on-ink uppercase tracking-wider">
               {type} inspector
             </h3>
           </div>
@@ -474,19 +494,19 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         <div className="flex w-full border-t border-ink-2">
           <button 
             onClick={() => setActiveTab('content')}
-            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'content' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'content' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-text-on-ink'}`}
           >
             Content
           </button>
           <button 
             onClick={() => setActiveTab('style')}
-            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'style' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'style' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-text-on-ink'}`}
           >
             Style
           </button>
           <button 
             onClick={() => setActiveTab('layout')}
-            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'layout' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'layout' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-text-on-ink'}`}
           >
             Layout
           </button>
@@ -507,7 +527,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {(type === 'header' || type === 'button') && (
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest">
                   Text content
                 </label>
                 <select
@@ -518,7 +538,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       e.target.value = '';
                     }
                   }}
-                  className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 outline-none cursor-pointer"
+                  className="text-[10px] font-bold text-gold bg-gold/10 hover:bg-gold/20 border border-gold/20 rounded px-2 py-1 outline-none cursor-pointer transition-all"
                   defaultValue=""
                 >
                   <option value="" disabled>⚡ Personalize</option>
@@ -535,12 +555,12 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 type="text"
                 value={content}
                 onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+                className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg focus:border-gold outline-none transition-all bg-ink text-text-on-ink"
               />
               
               {/* AI Generate Copy for Header/Button */}
-              <div className="mt-3 bg-violet-50/50 dark:bg-violet-900/10 p-3 rounded-xl border border-violet-100 dark:border-violet-900/30">
-                <label className="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-2">
+              <div className="mt-3 bg-gold/5 p-3 rounded-xl border border-gold/10">
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-gold uppercase tracking-wider mb-2">
                   <Sparkles className="w-3.5 h-3.5" /> AI Generate Copy
                 </label>
                 <div className="flex flex-col gap-2">
@@ -549,12 +569,13 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                     placeholder="E.g., Catchy subject for summer sale"
                     value={copyPrompt}
                     onChange={(e) => setCopyPrompt(e.target.value)}
-                    className="w-full text-[11px] px-2 py-1.5 border border-violet-200 dark:border-violet-800 rounded bg-white dark:bg-slate-900 outline-none focus:border-violet-400"
+                    className="w-full text-[11px] px-2 py-1.5 border border-ink-2 rounded bg-ink outline-none focus:border-gold text-text-on-ink"
                   />
                   <button
+                    id="btn-generate-copy"
                     onClick={handleGenerateCopy}
                     disabled={isGeneratingCopy || !copyPrompt}
-                    className="w-full py-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded text-[10px] font-bold flex justify-center items-center gap-1"
+                    className="w-full py-1.5 border border-gold text-gold hover:bg-gold hover:text-ink disabled:opacity-50 rounded text-[10px] font-bold flex justify-center items-center gap-1 transition-all cursor-pointer"
                   >
                     {isGeneratingCopy ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Generate'}
                   </button>
@@ -566,7 +587,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                         <div 
                           key={idx} 
                           onClick={() => onUpdateBlock(id, { content: sug })}
-                          className="text-[11px] p-2 bg-white dark:bg-slate-800 border border-violet-100 dark:border-violet-800 rounded shadow-xs cursor-pointer hover:border-violet-400 transition-colors"
+                          className="text-[11px] p-2 bg-ink-2/40 border border-ink-2 rounded shadow-xs cursor-pointer hover:border-gold/40 transition-colors text-text-on-ink"
                         >
                           {sug}
                         </div>
@@ -581,7 +602,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {(type === 'text' || type === 'footer') && (
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest">
                   Rich HTML / Text
                 </label>
                 <select
@@ -592,7 +613,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       e.target.value = '';
                     }
                   }}
-                  className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 outline-none cursor-pointer"
+                  className="text-[10px] font-bold text-gold bg-gold/10 hover:bg-gold/20 border border-gold/20 rounded px-2 py-1 outline-none cursor-pointer transition-all"
                   defaultValue=""
                 >
                   <option value="" disabled>⚡ Personalize</option>
@@ -609,13 +630,13 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 rows={5}
                 value={content}
                 onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                className="w-full text-xs font-mono p-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+                className="w-full text-xs font-mono p-3 border border-ink-2 rounded-lg focus:border-gold outline-none transition-all bg-ink text-text-on-ink custom-scrollbar"
                 placeholder="Supports regular text paragraphs or HTML inline tags."
               />
               
               {/* AI Generate Copy for Text */}
-              <div className="mt-3 bg-violet-50/50 dark:bg-violet-900/10 p-3 rounded-xl border border-violet-100 dark:border-violet-900/30">
-                <label className="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-2">
+              <div className="mt-3 bg-gold/5 p-3 rounded-xl border border-gold/10">
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-gold uppercase tracking-wider mb-2">
                   <Sparkles className="w-3.5 h-3.5" /> AI Generate Body Text
                 </label>
                 <div className="flex flex-col gap-2">
@@ -624,12 +645,13 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                     value={copyPrompt}
                     rows={2}
                     onChange={(e) => setCopyPrompt(e.target.value)}
-                    className="w-full text-[11px] px-2 py-1.5 border border-violet-200 dark:border-violet-800 rounded bg-white dark:bg-slate-900 outline-none focus:border-violet-400 resize-none"
+                    className="w-full text-[11px] px-2 py-1.5 border border-ink-2 rounded bg-ink outline-none focus:border-gold text-text-on-ink resize-none"
                   />
                   <button
+                    id="btn-generate-body-copy"
                     onClick={handleGenerateCopy}
                     disabled={isGeneratingCopy || !copyPrompt}
-                    className="w-full py-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded text-[10px] font-bold flex justify-center items-center gap-1"
+                    className="w-full py-1.5 border border-gold text-gold hover:bg-gold hover:text-ink disabled:opacity-50 rounded text-[10px] font-bold flex justify-center items-center gap-1 transition-all cursor-pointer"
                   >
                     {isGeneratingCopy ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Generate Text'}
                   </button>
@@ -641,7 +663,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                         <div 
                           key={idx} 
                           onClick={() => onUpdateBlock(id, { content: sug })}
-                          className="text-[11px] p-2 bg-white dark:bg-slate-800 border border-violet-100 dark:border-violet-800 rounded shadow-xs cursor-pointer hover:border-violet-400 transition-colors text-slate-600 dark:text-slate-300"
+                          className="text-[11px] p-2 bg-ink-2/40 border border-ink-2 rounded shadow-xs cursor-pointer hover:border-gold/40 transition-colors text-text-on-ink"
                         >
                           <span dangerouslySetInnerHTML={{__html: sug}} />
                         </div>
@@ -649,8 +671,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                     </div>
                   )}
 
-                  <div className="mt-2 pt-2 border-t border-violet-200/50 dark:border-violet-800/50">
-                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wider mb-2">
+                  <div className="mt-2 pt-2 border-t border-ink-2/30">
+                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-gold/60 uppercase tracking-wider mb-2">
                       Rewrite Current Text
                     </label>
                     <div className="flex flex-wrap gap-1.5">
@@ -659,14 +681,14 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                           key={op}
                           onClick={() => handleRewriteText(op)}
                           disabled={isRewritingText || !content}
-                          className="flex-1 min-w-[30%] py-1 px-2 bg-white dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-900/40 border border-violet-200 dark:border-violet-800 rounded text-[9px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wider disabled:opacity-50 transition-colors"
+                          className="flex-1 min-w-[30%] py-1 px-2 bg-ink hover:bg-gold/10 border border-ink-2 rounded text-[9px] font-bold text-gold uppercase tracking-wider disabled:opacity-50 transition-colors"
                         >
                           {op}
                         </button>
                       ))}
                     </div>
                     {isRewritingText && (
-                      <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-2 flex items-center justify-center gap-1">
+                      <p className="text-[10px] text-gold mt-2 flex items-center justify-center gap-1">
                         <RefreshCw className="w-3 h-3 animate-spin" /> Rewriting text...
                       </p>
                     )}
@@ -677,9 +699,9 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           )}
 
           {type === 'image' && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Upload Local Image
                 </label>
                 <div className="flex items-center justify-center w-full">
@@ -689,14 +711,14 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                     onDrop={handleDrop}
                     className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
                       isDragging
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
-                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/40 hover:border-blue-400'
+                        ? 'border-gold bg-ink-2/30'
+                        : 'border-ink-2 hover:border-gold/40 hover:bg-ink-2/10'
                     }`}
                   >
                     <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-4">
                       <div className="flex flex-col items-center justify-center text-center">
-                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-blue-500' : 'text-slate-400 dark:text-slate-600'}`} />
-                        <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-snug">
+                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-gold' : 'text-text-on-ink-muted'}`} />
+                        <p className="text-[10px] font-medium text-text-on-ink-muted leading-snug">
                           {isDragging ? 'Drop Image Here!' : 'Select or drag & drop image'}
                         </p>
                       </div>
@@ -713,8 +735,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               </div>
 
               {/* AI Generate Image */}
-              <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
-                <label className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">
+              <div className="bg-ink-2/40 p-4 rounded-xl border border-ink-2">
+                <label className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-gold uppercase tracking-widest mb-3">
                   <Sparkles className="w-3.5 h-3.5" /> AI Generate Image
                 </label>
                 <div className="flex flex-col gap-2">
@@ -723,21 +745,84 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                     placeholder="E.g., A minimalist workspace desk..."
                     value={imagePrompt}
                     onChange={(e) => setImagePrompt(e.target.value)}
-                    className="w-full text-[11px] px-2 py-1.5 border border-emerald-200 dark:border-emerald-800 rounded bg-white dark:bg-slate-900 outline-none focus:border-emerald-400"
+                    className="w-full text-[11px] px-3 py-2 border border-ink-2 rounded bg-ink outline-none text-text-on-ink focus:border-gold"
                   />
                   <button
+                    id="btn-generate-ai-image"
                     onClick={handleGenerateImage}
                     disabled={isGeneratingImage || !imagePrompt}
-                    className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-[10px] font-bold flex justify-center items-center gap-1"
+                    className="w-full py-2 border border-gold text-gold hover:bg-gold hover:text-ink disabled:opacity-50 rounded text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-wider transition-all cursor-pointer"
                   >
                     {isGeneratingImage ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Generate Image'}
                   </button>
-                  {aiError && <p className="text-[10px] text-red-500">{aiError}</p>}
+                  {aiError && <p className="text-[10px] text-red-400 mt-1">{aiError}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-2">
+                  Image Styling
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById('input-upload-image') as HTMLInputElement;
+                        input?.click();
+                      }}
+                      className="flex-1 py-2 bg-ink-2 hover:bg-gold hover:text-ink text-text-on-ink rounded text-[10px] font-bold uppercase tracking-wider transition-all"
+                    >
+                      Replace Image
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-text-on-ink-muted">Grayscale</label>
+                      <input type="range" min="0" max="100" value={properties.filterGrayscale || 0} onChange={(e) => updateProperty('filterGrayscale', parseInt(e.target.value))} className="w-full h-1 bg-ink-2 rounded-lg appearance-none cursor-pointer accent-gold" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-text-on-ink-muted">Sepia</label>
+                      <input type="range" min="0" max="100" value={properties.filterSepia || 0} onChange={(e) => updateProperty('filterSepia', parseInt(e.target.value))} className="w-full h-1 bg-ink-2 rounded-lg appearance-none cursor-pointer accent-gold" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-text-on-ink-muted">Contrast</label>
+                      <input type="range" min="50" max="200" value={properties.filterContrast || 100} onChange={(e) => updateProperty('filterContrast', parseInt(e.target.value))} className="w-full h-1 bg-ink-2 rounded-lg appearance-none cursor-pointer accent-gold" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-text-on-ink-muted">Brightness</label>
+                      <input type="range" min="50" max="200" value={properties.filterBrightness || 100} onChange={(e) => updateProperty('filterBrightness', parseInt(e.target.value))} className="w-full h-1 bg-ink-2 rounded-lg appearance-none cursor-pointer accent-gold" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-text-on-ink-muted">Aspect Ratio</label>
+                    <select
+                      value={properties.aspectRatio || 'original'}
+                      onChange={(e) => updateProperty('aspectRatio', e.target.value)}
+                      className="w-full text-[11px] px-2 py-1.5 border border-ink-2 rounded bg-ink outline-none text-text-on-ink"
+                    >
+                      <option value="original">Original</option>
+                      <option value="16/9">16:9</option>
+                      <option value="4/3">4:3</option>
+                      <option value="1/1">1:1</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] text-text-on-ink-muted">Hover Scale Effect</label>
+                    <input
+                      type="checkbox"
+                      checked={properties.hoverScale || false}
+                      onChange={(e) => updateProperty('hoverScale', e.target.checked)}
+                      className="accent-gold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Or Paste Image URL
                 </label>
                 <input
@@ -746,12 +831,12 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                   value={properties.src || ''}
                   onChange={(e) => updateProperty('src', e.target.value)}
                   placeholder="https://images.unsplash.com/..."
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg focus:border-blue-500 outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Alternative Text (Alt)
                 </label>
                 <input
@@ -760,36 +845,36 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                   value={properties.alt || ''}
                   onChange={(e) => updateProperty('alt', e.target.value)}
                   placeholder="e.g. Graphic Banner Illustration"
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg focus:border-blue-500 outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Image Link (Href)
                 </label>
                 <div className="relative">
-                  <Link className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400 dark:text-slate-600" />
+                  <Link className="absolute left-3 top-2.5 h-3.5 w-3.5 text-text-on-ink-muted" />
                   <input
                     id="input-image-href"
                     type="text"
                     value={properties.href || ''}
                     onChange={(e) => updateProperty('href', e.target.value)}
                     placeholder="e.g. https://yoursite.com"
-                    className="w-full text-xs pl-8 pr-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg focus:border-blue-500 outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                    className="w-full text-xs pl-9 pr-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Display Width
                 </label>
                 <select
                   id="select-image-width"
                   value={properties.width || '100%'}
                   onChange={(e) => updateProperty('width', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-100"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
                 >
                   <option value="100%">Full width (100%)</option>
                   <option value="400px">Large (400px)</option>
@@ -911,6 +996,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 </label>
                 <div className="flex gap-2">
                   <button 
+                    id="btn-add-section-column"
                     onClick={() => {
                       const cols = properties.columns || [];
                       if (cols.length < 3) {
@@ -926,7 +1012,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       }
                     }}
                     disabled={(properties.columns || []).length >= 3}
-                    className="flex-1 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold rounded-lg text-xs"
+                    className="flex-1 py-1.5 border border-gold text-gold hover:bg-gold hover:text-ink disabled:opacity-35 font-bold rounded-lg text-xs transition-all cursor-pointer"
                   >
                     + Add Column
                   </button>
@@ -986,79 +1072,113 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'hero' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Hero Title / Content
                 </label>
                 <input 
                   type="text"
                   value={content}
                   onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="SUMMER VIBES"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Upload Hero Background
+                </label>
+                <div className="flex items-center justify-center w-full">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      isDragging
+                        ? 'border-gold bg-ink-2/30'
+                        : 'border-ink-2 hover:border-gold/40 hover:bg-ink-2/10'
+                    }`}
+                  >
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-4">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-gold' : 'text-text-on-ink-muted'}`} />
+                        <p className="text-[10px] font-medium text-text-on-ink-muted leading-snug">
+                          {isDragging ? 'Drop Image Here!' : 'Select or drag & drop image'}
+                        </p>
+                      </div>
+                      <input
+                        id="input-upload-hero"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Background Image URL
                 </label>
                 <input 
                   type="text"
                   value={properties.src || ''}
                   onChange={(e) => updateProperty('src', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="https://images.unsplash.com/..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Badge Label
                   </label>
                   <input 
                     type="text"
                     value={properties.badge || ''}
                     onChange={(e) => updateProperty('badge', e.target.value)}
-                    className="w-full text-xs px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                     placeholder="E.g., Special"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Subtitle / Price
                   </label>
                   <input 
                     type="text"
                     value={properties.price || ''}
                     onChange={(e) => updateProperty('price', e.target.value)}
-                    className="w-full text-xs px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                     placeholder="E.g., From $49"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Destination Href Link
                 </label>
                 <input 
                   type="text"
                   value={properties.href || ''}
                   onChange={(e) => updateProperty('href', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="https://..."
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Overlay Position
                 </label>
                 <select 
                   value={properties.overlayPosition || 'center'}
                   onChange={(e) => updateProperty('overlayPosition', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
                 >
                   <option value="center">Center</option>
                   <option value="bottom-left">Bottom Left</option>
@@ -1066,14 +1186,14 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Overlay Scrim Layer Color
                 </label>
                 <input 
                   type="text"
                   value={properties.overlayScrim || 'rgba(15, 23, 42, 0.45)'}
                   onChange={(e) => updateProperty('overlayScrim', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-mono"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-mono"
                   placeholder="rgba(0,0,0,0.5)"
                 />
               </div>
@@ -1083,67 +1203,101 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'productCard' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Product Name
                 </label>
                 <input 
                   type="text"
                   value={content}
                   onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="Modern Product"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Upload Product Image
+                </label>
+                <div className="flex items-center justify-center w-full">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      isDragging
+                        ? 'border-gold bg-ink-2/30'
+                        : 'border-ink-2 hover:border-gold/40 hover:bg-ink-2/10'
+                    }`}
+                  >
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-4">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-gold' : 'text-text-on-ink-muted'}`} />
+                        <p className="text-[10px] font-medium text-text-on-ink-muted leading-snug">
+                          {isDragging ? 'Drop Image Here!' : 'Select or drag & drop image'}
+                        </p>
+                      </div>
+                      <input
+                        id="input-upload-product"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Product Image URL
                 </label>
                 <input 
                   type="text"
                   value={properties.src || ''}
                   onChange={(e) => updateProperty('src', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="https://images.unsplash.com/..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Price Tag
                   </label>
                   <input 
                     type="text"
                     value={properties.price || ''}
                     onChange={(e) => updateProperty('price', e.target.value)}
-                    className="w-full text-xs px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                     placeholder="$129.99"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Badge Tag
                   </label>
                   <input 
                     type="text"
                     value={properties.badge || ''}
                     onChange={(e) => updateProperty('badge', e.target.value)}
-                    className="w-full text-xs px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                     placeholder="Sale"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Purchase Link (Href)
                 </label>
                 <input 
                   type="text"
                   value={properties.href || ''}
                   onChange={(e) => updateProperty('href', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                   placeholder="https://..."
                 />
               </div>
@@ -1406,27 +1560,27 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'quote' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Quote Body Text
                 </label>
                 <textarea 
                   rows={3}
                   value={content}
                   onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                  className="w-full text-xs p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
-                  placeholder="Quote text"
+                  className="w-full text-xs p-3 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                  placeholder="The details are not the details. They make the design."
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Author Signature Name
                 </label>
                 <input 
                   type="text"
                   value={properties.author || ''}
                   onChange={(e) => updateProperty('author', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
-                  placeholder="Steve Jobs"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                  placeholder="Charles Eames"
                 />
               </div>
             </div>
@@ -1435,22 +1589,22 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'navbar' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Brand Logo Text
                 </label>
                 <input 
                   type="text"
                   value={content}
                   onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
                 />
               </div>
 
               <div>
-                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Navbar Nav Links</span>
+                <span className="block text-[10px] font-mono font-bold text-gold uppercase tracking-widest mb-3">Navbar Nav Links</span>
                 <div className="space-y-2">
                   {(properties.socialLinks || []).map((link: any, i: number) => (
-                    <div key={i} className="flex gap-1 bg-slate-50 dark:bg-slate-950 p-2 border border-slate-200 dark:border-slate-800 rounded-lg">
+                    <div key={i} className="flex gap-2 bg-ink-2/15 p-2 border border-ink-2 rounded-lg items-center">
                       <input 
                         type="text"
                         value={link.platform}
@@ -1459,7 +1613,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                           links[i] = { ...links[i], platform: e.target.value };
                           updateProperty('socialLinks', links);
                         }}
-                        className="w-16 text-[10px] px-1 border border-slate-200 dark:border-slate-800 rounded"
+                        className="w-20 text-[10px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
                         placeholder="Label"
                       />
                       <input 
@@ -1470,7 +1624,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                           links[i] = { ...links[i], url: e.target.value };
                           updateProperty('socialLinks', links);
                         }}
-                        className="flex-1 text-[10px] px-1 border border-slate-200 dark:border-slate-800 rounded"
+                        className="flex-1 text-[10px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
                         placeholder="Link URL"
                       />
                       <button 
@@ -1478,7 +1632,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                           const links = (properties.socialLinks || []).filter((_: any, idx: number) => idx !== i);
                           updateProperty('socialLinks', links);
                         }}
-                        className="text-red-500 text-xs px-1"
+                        className="text-red-400 hover:text-red-500 text-lg px-1 transition-colors"
                       >
                         ×
                       </button>
@@ -1489,9 +1643,9 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       const links = [...(properties.socialLinks || []), { platform: 'Link', url: '#' }];
                       updateProperty('socialLinks', links);
                     }}
-                    className="w-full py-1 text-[10px] font-bold border border-dashed border-blue-400 text-blue-500 hover:bg-blue-50/50 rounded"
+                    className="w-full py-2 text-[10px] font-mono font-bold border border-dashed border-gold/30 text-gold hover:bg-gold/10 rounded-lg transition-colors uppercase tracking-widest"
                   >
-                    + Add Link
+                    + Add Nav Link
                   </button>
                 </div>
               </div>
@@ -1501,15 +1655,15 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'htmlEmbed' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Raw Custom HTML Code
                 </label>
                 <textarea 
-                  rows={8}
+                  rows={10}
                   value={content}
                   onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
-                  className="w-full text-[10px] font-mono p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
-                  placeholder="<div style='color: red;'>Hello World</div>"
+                  className="w-full text-[10px] font-mono p-3 border border-ink-2 rounded-lg bg-ink outline-none text-gold"
+                  placeholder="<div style='color: #d4af37;'>Premium Content</div>"
                 />
               </div>
             </div>
@@ -1535,9 +1689,9 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           {type === 'divider' && (
             <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1">
+                <div className="flex justify-between text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-2">
                   <span>Divider Spacing</span>
-                  <span>{((style.paddingTop !== undefined ? style.paddingTop : 15) * 2)}px</span>
+                  <span className="text-gold">{((style.paddingTop !== undefined ? style.paddingTop : 15) * 2)}px</span>
                 </div>
                 <input
                   id="input-divider-spacing-slider"
@@ -1556,7 +1710,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       }
                     });
                   }}
-                  className="w-full accent-blue-600 animate-none"
+                  className="w-full h-1.5 bg-ink border border-ink-2 rounded-lg appearance-none cursor-pointer accent-gold"
                 />
               </div>
 
@@ -1565,9 +1719,9 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               </div>
 
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1">
+                <div className="flex justify-between text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-2">
                   <span>Line Weight</span>
-                  <span>{style.borderWidth !== undefined ? style.borderWidth : 1}px</span>
+                  <span className="text-gold">{style.borderWidth !== undefined ? style.borderWidth : 1}px</span>
                 </div>
                 <input
                   id="input-divider-weight-slider"
@@ -1577,35 +1731,40 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                   step="1"
                   value={style.borderWidth !== undefined ? style.borderWidth : 1}
                   onChange={(e) => updateStyle('borderWidth', parseInt(e.target.value))}
-                  className="w-full accent-blue-600 animate-none"
+                  className="w-full h-1.5 bg-ink border border-ink-2 rounded-lg appearance-none cursor-pointer accent-gold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-2">
                   Line Style
                 </label>
-                <select
-                  id="select-divider-style-select"
-                  value={style.borderStyle || 'solid'}
-                  onChange={(e) => updateStyle('borderStyle', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200 font-medium"
-                >
-                  <option value="solid">Solid continuous</option>
-                  <option value="dashed">Dashed segmented</option>
-                  <option value="dotted">Dotted nodes</option>
-                </select>
+                <div className="grid grid-cols-3 gap-2">
+                  {['solid', 'dashed', 'dotted'].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => updateStyle('borderStyle', s)}
+                      className={`py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded border transition-colors ${
+                        (style.borderStyle || 'solid') === s 
+                          ? 'bg-gold/10 border-gold text-gold' 
+                          : 'bg-ink border-ink-2 text-text-on-ink-muted hover:border-gold/50'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                   Line Width (Size)
                 </label>
                 <select
                   id="select-divider-width-select"
                   value={style.width || '100%'}
                   onChange={(e) => updateStyle('width', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200 font-medium"
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink focus:border-gold outline-none text-text-on-ink font-bold"
                 >
                   <option value="100%">Full Width (100%)</option>
                   <option value="80%">Wide (80%)</option>
@@ -1616,18 +1775,18 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1.5">
                   Line Alignment
                 </label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-800">
+                <div className="grid grid-cols-3 gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2">
                   {(['left', 'center', 'right'] as const).map((align) => (
                     <button
                       key={align}
                       onClick={() => updateStyle('textAlign', align)}
-                      className={`py-1 text-[10px] font-bold rounded-md capitalize cursor-pointer transition-all ${
+                      className={`py-1.5 text-[10px] font-bold rounded-md capitalize cursor-pointer transition-all ${
                         (style.textAlign || 'center') === align
-                          ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-xs'
-                          : 'text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350'
+                          ? 'bg-ink text-gold shadow-sm'
+                          : 'text-text-on-ink-muted hover:text-text-on-ink'
                       }`}
                     >
                       {align}
@@ -1661,16 +1820,221 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
             </div>
           )}
 
+          {type === 'shape' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Shape Type
+                </label>
+                <select
+                  value={properties.shape || 'rect'}
+                  onChange={(e) => updateProperty('shape', e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
+                >
+                  <option value="rect">Rectangle / Square</option>
+                  <option value="circle">Circle / Oval</option>
+                  <option value="triangle">Triangle</option>
+                  <option value="diamond">Diamond</option>
+                  <option value="pentagon">Pentagon</option>
+                  <option value="hexagon">Hexagon</option>
+                  <option value="star">Star</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                    Width
+                  </label>
+                  <input 
+                    type="text"
+                    value={properties.width || '100px'}
+                    onChange={(e) => updateProperty('width', e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                    Height
+                  </label>
+                  <input 
+                    type="text"
+                    value={properties.height || '100px'}
+                    onChange={(e) => updateProperty('height', e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                  />
+                </div>
+              </div>
+              {properties.blocks && properties.blocks.length > 0 && (
+                 <div>
+                    <label className="block text-[10px] font-mono font-bold text-rose-400 uppercase tracking-widest mb-2">
+                      Nested Items ({properties.blocks.length})
+                    </label>
+                    <button 
+                      onClick={() => updateProperty('blocks', [])}
+                      className="text-[10px] text-rose-400 hover:underline"
+                    >
+                      Clear all nested items
+                    </button>
+                 </div>
+              )}
+            </div>
+          )}
+
+          {type === 'sticker' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Upload Local Sticker
+                </label>
+                <div className="flex items-center justify-center w-full">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      isDragging
+                        ? 'border-gold bg-ink-2/30'
+                        : 'border-ink-2 hover:border-gold/40 hover:bg-ink-2/10'
+                    }`}
+                  >
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-4">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-gold' : 'text-text-on-ink-muted'}`} />
+                        <p className="text-[10px] font-medium text-text-on-ink-muted leading-snug">
+                          {isDragging ? 'Drop Image Here!' : 'Select or drag & drop image'}
+                        </p>
+                      </div>
+                      <input
+                        id="input-upload-sticker"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Sticker Image URL
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    value={properties.src || ''}
+                    onChange={(e) => updateProperty('src', e.target.value)}
+                    className="flex-1 text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                    placeholder="https://..."
+                  />
+                  <button 
+                    onClick={() => {
+                      const url = prompt('Enter Image URL:');
+                      if (url) updateProperty('src', url);
+                    }}
+                    className="px-3 py-2 bg-gold/10 text-gold rounded-lg border border-gold/20"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Size
+                </label>
+                <input 
+                  type="text"
+                  value={properties.width || '80px'}
+                  onChange={(e) => updateProperty('width', e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                />
+              </div>
+            </div>
+          )}
+
+          {type === 'icon' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                  Upload Custom Icon (Image)
+                </label>
+                <div className="flex items-center justify-center w-full">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      isDragging
+                        ? 'border-gold bg-ink-2/30'
+                        : 'border-ink-2 hover:border-gold/40 hover:bg-ink-2/10'
+                    }`}
+                  >
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer p-4">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className={`h-5 w-5 mb-1 transition-transform ${isDragging ? 'scale-110 text-gold' : 'text-text-on-ink-muted'}`} />
+                        <p className="text-[10px] font-medium text-text-on-ink-muted leading-snug">
+                          {isDragging ? 'Drop Image Here!' : 'Select or drag & drop image'}
+                        </p>
+                      </div>
+                      <input
+                        id="input-upload-icon-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-2">
+                  SVG Icon Markup
+                </label>
+                <textarea 
+                  rows={6}
+                  value={properties.svg || ''}
+                  onChange={(e) => {
+                    updateProperty('svg', e.target.value);
+                    updateProperty('src', ''); // Clear image source if SVG is edited
+                  }}
+                  className="w-full text-[10px] font-mono p-3 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink custom-scrollbar"
+                  placeholder='<svg ...>...</svg>'
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-mono font-bold text-text-on-ink-muted mb-2 uppercase tracking-widest">Presets:</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { name: 'Star', svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
+                    { name: 'Heart', svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>' },
+                    { name: 'Check', svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' },
+                    { name: 'Alert', svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>' },
+                  ].map(p => (
+                    <button 
+                      key={p.name}
+                      onClick={() => updateProperty('svg', p.svg)}
+                      className="text-[10px] font-bold bg-ink-2 text-text-on-ink px-2 py-1 rounded hover:bg-gold/20 hover:text-gold transition-all"
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {type === 'social' && (
             <div className="space-y-3">
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                 Configured Networks
               </label>
               
               <div className="space-y-2.5">
                 {(properties.socialLinks || []).map((link: any, index: number) => (
-                  <div key={index} className="flex gap-1.5 items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/50 dark:border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase w-14 truncate">
+                  <div key={index} className="flex gap-1.5 items-center bg-ink-2 p-2 rounded-lg border border-ink-2/40">
+                    <span className="text-[10px] font-mono font-bold text-text-on-ink-muted uppercase w-14 truncate tracking-wider">
                       {link.platform}
                     </span>
                     <input
@@ -1678,12 +2042,12 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       type="text"
                       value={link.url}
                       onChange={(e) => handleSocialLinkChange(index, e.target.value)}
-                      className="w-full text-[10px] px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
+                      className="w-full text-[10px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink"
                     />
                     <button
                       id={`btn-remove-social-${index}`}
                       onClick={() => removeSocialPlatform(index)}
-                      className="text-slate-400 dark:text-slate-500 hover:text-red-500 p-0.5"
+                      className="text-text-on-ink-muted hover:text-rose-400 p-1 hover:bg-rose-500/10 rounded transition-all"
                     >
                       <Trash className="h-3 w-3" />
                     </button>
@@ -1694,8 +2058,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               {/* Add Platform dropdown selector */}
               { (properties.socialLinks || []).length < availableSocials.length && (
                 <div className="pt-2">
-                  <span className="block text-[9px] font-semibold text-slate-400 dark:text-slate-500 mb-1">ADD MORE NETWORKS:</span>
-                  <div className="flex flex-wrap gap-1">
+                  <span className="block text-[9px] font-mono font-bold text-text-on-ink-muted mb-2 uppercase tracking-widest">ADD MORE NETWORKS:</span>
+                  <div className="flex flex-wrap gap-2">
                     {availableSocials
                       .filter(platform => !(properties.socialLinks || []).some((l: any) => l.platform === platform))
                       .map(platform => (
@@ -1703,7 +2067,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                           id={`btn-add-social-${platform}`}
                           key={platform}
                           onClick={() => addSocialPlatform(platform)}
-                          className="text-[9px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 px-2 py-1 rounded transition-colors uppercase"
+                          className="text-[9px] font-bold bg-gold/10 text-gold hover:bg-gold/20 px-2.5 py-1.5 rounded transition-all uppercase tracking-wider border border-gold/10"
                         >
                           + {platform}
                         </button>
@@ -1722,24 +2086,24 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
 
         {/* SECTION 2: Formatting Typographies (Omitted for dividers and spacers) */}
         {type !== 'divider' && type !== 'spacer' && (
-          <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-1.5">
-              <Palette className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Typography & Color</h4>
+          <div className="space-y-4 pt-4 border-t border-ink-2/30">
+            <div className="flex items-center gap-1.5 border-b border-ink-2/30 pb-2">
+              <Palette className="h-3.5 w-3.5 text-gold" />
+              <h4 className="text-xs font-mono font-bold text-text-on-ink uppercase tracking-widest">Typography & Color</h4>
             </div>
 
             {/* Font Size & Weight (If applicable to texts/headers/buttons) */}
             {(type === 'header' || type === 'text' || type === 'button' || type === 'footer') && (
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Font Size
                   </label>
                   <select
                     id="select-font-size"
                     value={style.fontSize || ''}
                     onChange={(e) => updateStyle('fontSize', e.target.value)}
-                    className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 outline-none text-slate-800 dark:text-slate-200"
+                    className="w-full text-xs px-2 py-1.5 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
                   >
                     <option value="">Default</option>
                     <option value="11px">11px (Tiny)</option>
@@ -1755,14 +2119,14 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
                     Font Weight
                   </label>
                   <select
                     id="select-font-weight"
                     value={style.fontWeight || ''}
                     onChange={(e) => updateStyle('fontWeight', e.target.value)}
-                    className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 outline-none text-slate-800 dark:text-slate-200"
+                    className="w-full text-xs px-2 py-1.5 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
                   >
                     <option value="">Default</option>
                     <option value="normal">Regular (400)</option>
@@ -1869,20 +2233,20 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         )}
 
         {/* SECTION: Universal Alignment Control */}
-        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-850">
-          <div className="flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-850 pb-1.5">
-            <AlignLeft className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Layout Alignment</h4>
+        <div className="space-y-4 pt-4 border-t border-ink-2/30">
+          <div className="flex items-center gap-1.5 border-b border-ink-2/30 pb-2">
+            <AlignLeft className="h-3.5 w-3.5 text-gold" />
+            <h4 className="text-xs font-mono font-bold text-text-on-ink uppercase tracking-widest">Layout Alignment</h4>
           </div>
           <div>
-            <div className="flex bg-slate-100 dark:bg-slate-950 p-0.5 border border-slate-200/50 dark:border-slate-800 rounded-lg">
+            <div className="flex bg-ink-2 p-1 border border-ink-2 rounded-lg">
               <button
                 id="btn-align-left-global"
                 onClick={() => updateStyle('textAlign', 'left')}
                 className={`flex-1 py-1.5 flex justify-center rounded-md cursor-pointer transition-all ${
                   style.textAlign === 'left' || !style.textAlign
-                    ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/10'
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-ink text-gold shadow-sm'
+                    : 'text-text-on-ink-muted hover:text-text-on-ink'
                 }`}
                 title="Align Left"
               >
@@ -1893,8 +2257,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 onClick={() => updateStyle('textAlign', 'center')}
                 className={`flex-1 py-1.5 flex justify-center rounded-md cursor-pointer transition-all ${
                   style.textAlign === 'center'
-                    ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/10'
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-ink text-gold shadow-sm'
+                    : 'text-text-on-ink-muted hover:text-text-on-ink'
                 }`}
                 title="Align Center"
               >
@@ -1905,8 +2269,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 onClick={() => updateStyle('textAlign', 'right')}
                 className={`flex-1 py-1.5 flex justify-center rounded-md cursor-pointer transition-all ${
                   style.textAlign === 'right'
-                    ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/10'
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-ink text-gold shadow-sm'
+                    : 'text-text-on-ink-muted hover:text-text-on-ink'
                 }`}
                 title="Align Right"
               >
@@ -1917,8 +2281,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 onClick={() => updateStyle('textAlign', 'justify')}
                 className={`flex-1 py-1.5 flex justify-center rounded-md cursor-pointer transition-all ${
                   style.textAlign === 'justify'
-                    ? 'bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/10'
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-ink text-gold shadow-sm'
+                    : 'text-text-on-ink-muted hover:text-text-on-ink'
                 }`}
                 title="Justify Text / Stretch"
               >
@@ -2116,6 +2480,141 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
       </div>
     )}
 
+          {type === 'productLoop' && (
+            <div className="space-y-4">
+              <span className="block text-[10px] font-mono font-bold text-gold uppercase tracking-widest">Product Loop Configuration</span>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                    Feed Name / Title
+                  </label>
+                  <input
+                    type="text"
+                    value={content}
+                    onChange={(e) => onUpdateBlock(id, { content: e.target.value })}
+                    className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                    placeholder="Trending Products"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                      Data Source
+                    </label>
+                    <select
+                      value={properties.dataSource || 'recommended'}
+                      onChange={(e) => updateProperty('dataSource', e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink font-bold"
+                    >
+                      <option value="recommended">Recommended</option>
+                      <option value="new_arrivals">New Arrivals</option>
+                      <option value="best_sellers">Best Sellers</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest mb-1">
+                      Limit
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={properties.limit || 3}
+                      onChange={(e) => updateProperty('limit', parseInt(e.target.value, 10))}
+                      className="w-full text-xs px-3 py-2 border border-ink-2 rounded-lg bg-ink outline-none text-text-on-ink"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <span className="block text-[10px] font-mono font-bold text-gold uppercase tracking-widest mt-4">Product Items ({(properties.items || []).length})</span>
+              
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                {(properties.items || []).map((item: any, i: number) => (
+                  <div key={i} className="p-3 border border-ink-2 rounded bg-ink-2/15 space-y-2 relative group/item">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-gold">Item {i + 1}</span>
+                      <button
+                        onClick={() => {
+                          const list = [...(properties.items || [])];
+                          list.splice(i, 1);
+                          updateProperty('items', list);
+                        }}
+                        className="text-[10px] text-red-400 hover:text-red-500 font-bold uppercase tracking-tighter"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <div className="w-12 h-12 rounded border border-ink-2 bg-ink overflow-hidden flex-shrink-0 flex items-center justify-center relative group">
+                        <img src={item.src} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <label className="absolute inset-0 bg-ink/80 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                          <Upload className="w-4 h-4 text-gold" />
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleImageUpload(e, i, 'items')}
+                          />
+                        </label>
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <input
+                          type="text"
+                          value={item.name || ''}
+                          onChange={(e) => {
+                            const list = [...(properties.items || [])];
+                            list[i] = { ...list[i], name: e.target.value };
+                            updateProperty('items', list);
+                          }}
+                          className="w-full text-[9px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                          placeholder="Product Name"
+                        />
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            value={item.price || ''}
+                            onChange={(e) => {
+                              const list = [...(properties.items || [])];
+                              list[i] = { ...list[i], price: e.target.value };
+                              updateProperty('items', list);
+                            }}
+                            className="flex-1 text-[9px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink-muted outline-none focus:border-gold"
+                            placeholder="Price"
+                          />
+                          <input
+                            type="text"
+                            value={item.src || ''}
+                            onChange={(e) => {
+                              const list = [...(properties.items || [])];
+                              list[i] = { ...list[i], src: e.target.value };
+                              updateProperty('items', list);
+                            }}
+                            className="flex-1 text-[9px] px-2 py-1 border border-ink-2 rounded bg-ink text-text-on-ink-muted outline-none focus:border-gold"
+                            placeholder="Image URL"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const list = [...(properties.items || [])];
+                    list.push({ name: 'New Product', price: '$0.00', src: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300' });
+                    updateProperty('items', list);
+                  }}
+                  className="w-full py-2 border border-dashed border-gold/30 rounded-lg text-[10px] font-mono font-bold text-gold hover:bg-gold/10 transition-colors uppercase tracking-widest"
+                >
+                  + Add Product Item
+                </button>
+              </div>
+            </div>
+          )}
+
         {/* LAYOUT TAB */}
         {activeTab === 'layout' && (
           <div className="space-y-4 animate-fade-in">
@@ -2260,6 +2759,112 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
               <div>
                 {renderColorPicker('Line Color', style.borderColor || '#e2e8f0', (color) => updateStyle('borderColor', color), '#e2e8f0')}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 5: Dynamic Visibility Conditions (Personalization) */}
+        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-1.5">
+            <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Conditional visibility</h4>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="checkbox-enable-visibility"
+              type="checkbox"
+              checked={selectedBlock.visibilityCondition !== undefined}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  onUpdateBlock(selectedBlock.id, {
+                    visibilityCondition: {
+                      field: 'membership_tier',
+                      operator: 'equals',
+                      value: 'premium'
+                    }
+                  });
+                } else {
+                  onUpdateBlock(selectedBlock.id, {
+                    visibilityCondition: undefined
+                  });
+                }
+              }}
+              className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
+            />
+            <label htmlFor="checkbox-enable-visibility" className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">
+              Enable conditional display (Liquid)
+            </label>
+          </div>
+
+          {selectedBlock.visibilityCondition && (
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 animate-fadeIn">
+              <div>
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Merge Field Variable
+                </label>
+                <input
+                  id="input-visibility-field"
+                  type="text"
+                  value={selectedBlock.visibilityCondition.field}
+                  onChange={(e) => {
+                    onUpdateBlock(selectedBlock.id, {
+                      visibilityCondition: {
+                        ...selectedBlock.visibilityCondition!,
+                        field: e.target.value
+                      }
+                    });
+                  }}
+                  placeholder="e.g. membership_tier"
+                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Operator
+                </label>
+                <select
+                  id="select-visibility-operator"
+                  value={selectedBlock.visibilityCondition.operator}
+                  onChange={(e) => {
+                    onUpdateBlock(selectedBlock.id, {
+                      visibilityCondition: {
+                        ...selectedBlock.visibilityCondition!,
+                        operator: e.target.value as any
+                      }
+                    });
+                  }}
+                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200 cursor-pointer"
+                >
+                  <option value="equals">Equals (==)</option>
+                  <option value="not_equals">Does Not Equal (!=)</option>
+                  <option value="exists">Is Defined / Exists</option>
+                </select>
+              </div>
+
+              {selectedBlock.visibilityCondition.operator !== 'exists' && (
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Value to Match
+                  </label>
+                  <input
+                    id="input-visibility-value"
+                    type="text"
+                    value={selectedBlock.visibilityCondition.value || ''}
+                    onChange={(e) => {
+                      onUpdateBlock(selectedBlock.id, {
+                        visibilityCondition: {
+                          ...selectedBlock.visibilityCondition!,
+                          value: e.target.value
+                        }
+                      });
+                    }}
+                    placeholder="e.g. premium"
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -30,7 +30,9 @@ import {
   Share2,
   FileText,
   Link,
-  Grid
+  Grid,
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import { EmailTemplate, EmailBlock, BlockType, UndoRedoState, SharedBlock, MediaAsset } from './types';
 import Sidebar from './components/Sidebar';
@@ -40,13 +42,18 @@ import Postmark from './components/Postmark';
 import CodeViewer from './components/CodeViewer';
 import PreviewModal from './components/PreviewModal';
 import SmartLayoutModal from './components/SmartLayoutModal';
+import QualityCheckModal from './components/QualityCheckModal';
 import HomeHub from './components/HomeHub';
 import VersionHistorySidebar from './components/VersionHistorySidebar';
+import LayersPanel from './components/LayersPanel';
+import DeliverabilityPanel from './components/DeliverabilityPanel';
 import { STARTER_TEMPLATES } from './utils/templates';
 import { generateHTML } from './utils/htmlGenerator';
 import { toPng } from 'html-to-image';
 
 const AUTOSAVE_KEY = 'easy-email-builder-state-v1';
+
+import { blockRegistry } from './blocks/registry';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'editor'>('home');
@@ -227,6 +234,9 @@ export default function App() {
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSmartLayoutOpen, setIsSmartLayoutOpen] = useState(false);
+  const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
+  const [isQualityCheckOpen, setIsQualityCheckOpen] = useState(false);
+  const [isDeliverabilityOpen, setIsDeliverabilityOpen] = useState(false);
 
   const handleApplySmartLayout = (improvedTemplate: EmailTemplate, suggestions: string[]) => {
     saveStateToHistory(improvedTemplate);
@@ -672,39 +682,11 @@ export default function App() {
     };
 
     // Sensible content & style presets
-    if (type === 'header') {
-      newBlock.content = 'Inspirational Brand Title';
-      newBlock.style = { ...newBlock.style, color: '#111827', textAlign: 'center', fontSize: '24px', fontWeight: 'bold', paddingTop: 20, paddingBottom: 20 };
-    } else if (type === 'text') {
-      newBlock.content = '<p>Introduce key sales updates, feature releases, or editorial columns directly. This text block can be clicked and edited.</p>';
-      newBlock.style = { ...newBlock.style, color: '#374151', textAlign: 'left', fontSize: '15px', lineHeight: '1.6' };
-    } else if (type === 'image') {
-      newBlock.properties = {
-        src: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=600&auto=format&fit=crop&q=80',
-        alt: 'Editorial banner illustration',
-        width: '100%',
-      };
-      newBlock.style = { ...newBlock.style, borderRadius: 8, paddingTop: 10, paddingBottom: 10 };
-    } else if (type === 'button') {
-      newBlock.content = 'Claim Coupon Code ⚡';
-      newBlock.properties = { href: 'https://github.com/zalify/easy-email-editor' };
-      newBlock.style = { ...newBlock.style, backgroundColor: '#3b82f6', color: '#ffffff', textAlign: 'center', borderRadius: 6, fontSize: '16px', fontWeight: 'bold', paddingTop: 15, paddingBottom: 15 };
-    } else if (type === 'divider') {
-      newBlock.style = { ...newBlock.style, borderColor: '#e2e8f0', borderWidth: 1, borderStyle: 'solid', paddingTop: 15, paddingBottom: 15 };
-    } else if (type === 'spacer') {
-      newBlock.properties = { height: 30 };
-    } else if (type === 'social') {
-      newBlock.properties = {
-        socialLinks: [
-          { platform: 'facebook', url: 'https://facebook.com' },
-          { platform: 'twitter', url: 'https://twitter.com' },
-          { platform: 'linkedin', url: 'https://linkedin.com' },
-        ],
-      };
-      newBlock.style = { ...newBlock.style, textAlign: 'center', paddingTop: 15, paddingBottom: 15 };
-    } else if (type === 'footer') {
-      newBlock.content = '© 2026 Your Company. All rights reserved.<br/>Want to receive fewer emails? You can <a href="#" style="color: inherit; text-decoration: underline;">unsubscribe</a>.';
-      newBlock.style = { ...newBlock.style, color: '#6b7280', textAlign: 'center', fontSize: '12px', lineHeight: '1.5', paddingTop: 20, paddingBottom: 20 };
+    const def = blockRegistry.get(type);
+    if (def) {
+      if (def.defaultContent) newBlock.content = def.defaultContent;
+      if (def.defaultProps) newBlock.properties = { ...def.defaultProps };
+      if (def.defaultStyle) newBlock.style = { ...newBlock.style, ...def.defaultStyle };
     }
 
     const updatedBlocks = [...template.blocks, newBlock];
@@ -719,6 +701,27 @@ export default function App() {
 
   // Modify individual element in template
   const handleUpdateBlock = (blockId: string, updates: Partial<EmailBlock>) => {
+    const block = template.blocks.find(b => b.id === blockId);
+    if (block && block.symbolId) {
+      setSharedBlocks(prev => prev.map(sb => {
+        if (sb.id === block.symbolId) {
+          const nextBlock = { ...sb.block };
+          if (updates.content !== undefined) nextBlock.content = updates.content;
+          if (updates.properties !== undefined) {
+            nextBlock.properties = { ...nextBlock.properties, ...updates.properties };
+          }
+          if (updates.style !== undefined) {
+            nextBlock.style = { ...nextBlock.style, ...updates.style };
+          }
+          if (updates.visibilityCondition !== undefined) {
+            nextBlock.visibilityCondition = updates.visibilityCondition;
+          }
+          return { ...sb, block: nextBlock };
+        }
+        return sb;
+      }));
+    }
+
     const nextBlocks = template.blocks.map((b) => {
       if (b.id === blockId) {
         return { ...b, ...updates };
@@ -735,6 +738,14 @@ export default function App() {
     if (selectedBlockId === blockId) {
       setSelectedBlockId(null);
     }
+  };
+
+  // Reorder Elements (Layers panel)
+  const handleReorderBlocks = (startIndex: number, endIndex: number) => {
+    const nextBlocks = [...template.blocks];
+    const [removed] = nextBlocks.splice(startIndex, 1);
+    nextBlocks.splice(endIndex, 0, removed);
+    updateTemplate({ blocks: nextBlocks });
   };
 
   // Duplicate Block
@@ -844,7 +855,22 @@ export default function App() {
     showToast('Snapshot saved manually.', 'success');
   };
 
-  const selectedBlock = template.blocks.find((b) => b.id === selectedBlockId) || null;
+  const rawSelectedBlock = template.blocks.find((b) => b.id === selectedBlockId) || null;
+  const selectedBlock = (() => {
+    if (!rawSelectedBlock) return null;
+    if (rawSelectedBlock.symbolId) {
+      const shared = sharedBlocks.find(sb => sb.id === rawSelectedBlock.symbolId);
+      if (shared) {
+        return {
+          ...rawSelectedBlock,
+          content: shared.block.content,
+          properties: { ...shared.block.properties },
+          style: { ...shared.block.style }
+        };
+      }
+    }
+    return rawSelectedBlock;
+  })();
 
   if (currentScreen === 'home') {
     return (
@@ -895,10 +921,10 @@ export default function App() {
         </div>
 
         {/* Global Toolbar Options */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           
           {/* History Stack Toggles */}
-          <div className="flex items-center gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50">
+          <div className="flex items-center gap-0.5 bg-ink-2 p-0.5 rounded-lg border border-ink-2/50">
             <button
               id="btn-undo"
               onClick={handleUndo}
@@ -928,14 +954,14 @@ export default function App() {
           </div>
 
           {/* Sync / Autosave Indicator */}
-          <div className="flex items-center gap-2.5 text-xs">
+          <div className="flex items-center gap-1.5 text-[9px]">
             {autosaveStatus === 'saving' ? (
-              <div className="flex items-center gap-1.5 text-gold bg-gold/10 px-2.5 py-1 rounded-full border border-gold/30 font-semibold animate-pulse font-mono">
+              <div className="flex items-center gap-1 text-gold bg-gold/10 px-2 py-0.5 rounded-full border border-gold/30 font-semibold animate-pulse font-mono">
                 <RefreshCw className="h-3 w-3 animate-spin" />
                 <span>SAVING...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-text-on-ink-muted bg-ink-2 px-2.5 py-1 rounded-full border border-ink-2/50 font-semibold font-mono text-[10px]">
+              <div className="flex items-center gap-1 text-text-on-ink-muted bg-ink-2 px-2 py-0.5 rounded-full border border-ink-2/50 font-semibold font-mono text-[9px] whitespace-nowrap">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                 <span>AUTOSAVED {lastSavedTime && `AT ${lastSavedTime.toUpperCase()}`}</span>
               </div>
@@ -945,7 +971,7 @@ export default function App() {
             <button
               id="btn-manual-save"
               onClick={handleManualSave}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer"
+              className="flex items-center gap-1 py-1 px-2 text-[10px] font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer"
               title="Save manually to Local Storage for peace of mind"
             >
               <Save className="h-3 w-3" />
@@ -954,22 +980,46 @@ export default function App() {
             <button
               id="btn-download-image"
               onClick={handleDownloadImage}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
+              className="flex items-center gap-1 py-1 px-2 text-[10px] font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
               title="Download Canvas as Image"
             >
               <ImageIcon className="h-3 w-3" />
-              <span>Export Image</span>
+              <span>Export</span>
             </button>
             <button
               id="btn-validate-email"
               onClick={handleValidateEmail}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
+              className="flex items-center gap-1 py-1 px-2 text-[10px] font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
               title="Validate Links & Images"
             >
               <Link className="h-3 w-3" />
-              <span>Validate URLs</span>
+              <span>Check URLs</span>
             </button>
           </div>
+
+          <div className="h-5 w-px bg-ink-2/50" />
+
+          {/* Layers Panel Toggle */}
+          <button
+            onClick={() => setIsLayersPanelOpen(!isLayersPanelOpen)}
+            className={`flex items-center gap-1 py-1 px-2 text-[10px] font-bold rounded-lg transition-all border cursor-pointer shrink-0 ${isLayersPanelOpen ? 'border-gold text-gold bg-gold/5' : 'border-ink-2 hover:border-gold/40 text-text-on-ink hover:text-gold'}`}
+            title="Toggle Layers Panel"
+          >
+            <Layers className="h-3 w-3 shrink-0" />
+            <span>Layers</span>
+          </button>
+
+          <div className="h-5 w-px bg-ink-2/50" />
+
+          {/* Quality Check Button */}
+          <button
+            onClick={() => setIsDeliverabilityOpen(true)}
+            className={`flex items-center gap-1 py-1 px-2 text-[10px] font-bold rounded-lg transition-all border cursor-pointer shrink-0 ${isDeliverabilityOpen ? 'border-gold text-gold bg-gold/5' : 'border-ink-2 hover:border-gold/40 text-text-on-ink hover:text-gold'}`}
+            title="Deliverability & Spam Check"
+          >
+            <ShieldCheck className="h-3 w-3 shrink-0" />
+            <span>Quality</span>
+          </button>
 
           <div className="h-5 w-px bg-ink-2/50" />
 
@@ -977,10 +1027,10 @@ export default function App() {
           <button
             id="btn-smart-layout"
             onClick={() => setIsSmartLayoutOpen(true)}
-            className="flex items-center gap-1.5 py-1.5 px-3 text-xs font-extrabold rounded-lg transition-all border border-gold/40 hover:border-gold text-gold hover:bg-gold/5 cursor-pointer shrink-0"
+            className="flex items-center gap-1 py-1 px-2 text-[10px] font-extrabold rounded-lg transition-all border border-gold/40 hover:border-gold text-gold hover:bg-gold/5 cursor-pointer shrink-0"
             title="AI Smart Layout: Harmonize color theme and professional spacing improvements"
           >
-            <Sparkles className="h-3.5 w-3.5 animate-pulse text-gold shrink-0" />
+            <Sparkles className="h-3 w-3 animate-pulse text-gold shrink-0" />
             <span>Smart Layout</span>
           </button>
 
@@ -1055,7 +1105,7 @@ export default function App() {
           <button
             id="btn-export-html"
             onClick={handleExportHTML}
-            className="flex items-center gap-1.5 py-2 px-4 text-xs font-extrabold rounded-lg transition-all bg-gold text-ink hover:bg-gold/90 shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 py-2 px-4 text-xs font-extrabold rounded-lg transition-all bg-gold text-ink hover:bg-gold-hover shadow-md shadow-gold/20 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5 text-ink font-extrabold" />
             Export HTML
@@ -1064,7 +1114,7 @@ export default function App() {
           <button
             id="btn-preview-and-test"
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-1.5 py-2 px-4 text-xs font-bold rounded-lg transition-all bg-transparent text-text-on-ink border border-ink-2 hover:bg-ink-2 hover:border-gold/30 cursor-pointer"
+            className="flex items-center gap-1.5 py-2 px-4 text-xs font-bold rounded-lg transition-all bg-transparent text-text-on-ink border border-ink-2 hover:border-gold/50 hover:bg-gold/5 cursor-pointer"
           >
             <Inbox className="h-3.5 w-3.5 text-text-on-ink-muted" />
             Preview & Test
@@ -1075,6 +1125,27 @@ export default function App() {
       {/* Main workspace layout: Styled as a Bento Grid with gap, paddings, and background */}
       <div className="flex-1 flex flex-wrap lg:flex-nowrap overflow-y-auto lg:overflow-hidden min-h-0 p-2 sm:p-4 gap-2 sm:gap-4 bg-ink-2 pb-24 lg:pb-4 relative">
         
+        {isLayersPanelOpen && (
+          <div className="fixed inset-y-0 right-0 z-[100] w-64 shadow-2xl">
+            <LayersPanel
+              blocks={template.blocks}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={setSelectedBlockId}
+              onUpdateBlock={handleUpdateBlock}
+              onReorder={handleReorderBlocks}
+              onDeleteBlock={handleDeleteBlock}
+              onClose={() => setIsLayersPanelOpen(false)}
+            />
+          </div>
+        )}
+
+        {isDeliverabilityOpen && (
+          <DeliverabilityPanel 
+            template={template}
+            onClose={() => setIsDeliverabilityOpen(false)}
+          />
+        )}
+
         {/* Left Column: Sidebar Component (Always active for dragging, presets, global settings) */}
         <div className={`${mobileWorkspaceView === 'elements' ? 'flex flex-1' : 'hidden'} lg:flex lg:w-80 shrink-0 h-full min-w-0`}>
           <Sidebar
@@ -1114,6 +1185,7 @@ export default function App() {
                 sharedBlocks={sharedBlocks}
                 onSaveAsShared={handleSaveAsShared}
                 onDisconnectShared={handleDisconnectShared}
+                onAddMediaAsset={handleAddMediaAsset}
               />
             </div>
 
@@ -1146,6 +1218,7 @@ export default function App() {
                   sharedBlocks={sharedBlocks}
                   onSaveAsShared={handleSaveAsShared}
                   onDisconnectShared={handleDisconnectShared}
+                  onAddMediaAsset={handleAddMediaAsset}
                 />
               </div>
               <div className="hidden lg:block w-[500px] shrink-0 h-full select-text">
@@ -1170,14 +1243,14 @@ export default function App() {
 
         {viewMode === 'developer' && (
           /* Full screen standalone inspector and code viewing playground */
-          <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-6 overflow-hidden flex flex-col h-full shadow-sm">
+          <div className="flex-1 bg-ink rounded-2xl border border-ink-2 p-4 sm:p-6 overflow-hidden flex flex-col h-full shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                  <Code2 className="h-4 w-4 text-blue-400 animate-pulse" />
+                <h2 className="text-sm font-mono font-bold text-text-on-ink flex items-center gap-1.5 uppercase tracking-widest">
+                  <Code2 className="h-4 w-4 text-gold animate-pulse" />
                   Markup & Raw Code Inspect Room
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-text-on-ink-muted mt-0.5">
                   Inspect the compiled real-time MJML syntax or inline styled tables. Test responsive client layouts using the sandboxed visual iframe.
                 </p>
               </div>
@@ -1194,13 +1267,13 @@ export default function App() {
       </div>
 
       {/* Mobile View Switcher - Sticky/Floating Bottom Nav Bar (visible only below lg) */}
-      <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-850 p-2 rounded-full shadow-xl flex items-center gap-2 z-50">
+      <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-ink/95 backdrop-blur-md border border-ink-2 p-2 rounded-full shadow-xl flex items-center gap-2 z-50">
         <button
           onClick={() => setMobileWorkspaceView('elements')}
           className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             mobileWorkspaceView === 'elements'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-550 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-gold text-ink shadow-sm'
+              : 'text-text-on-ink-muted hover:text-text-on-ink'
           }`}
         >
           <LayoutGrid className="h-3.5 w-3.5" />
@@ -1210,8 +1283,8 @@ export default function App() {
           onClick={() => setMobileWorkspaceView('canvas')}
           className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             mobileWorkspaceView === 'canvas'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-550 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-gold text-ink shadow-sm'
+              : 'text-text-on-ink-muted hover:text-text-on-ink'
           }`}
         >
           <Inbox className="h-3.5 w-3.5" />
@@ -1221,8 +1294,8 @@ export default function App() {
           onClick={() => setMobileWorkspaceView('inspector')}
           className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             mobileWorkspaceView === 'inspector'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-550 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-gold text-ink shadow-sm'
+              : 'text-text-on-ink-muted hover:text-text-on-ink'
           }`}
         >
           <Sliders className="h-3.5 w-3.5" />
@@ -1283,6 +1356,11 @@ export default function App() {
         template={template}
         onApply={handleApplySmartLayout}
       />
+      <QualityCheckModal
+        isOpen={isQualityCheckOpen}
+        onClose={() => setIsQualityCheckOpen(false)}
+        template={template}
+      />
       {isVersionHistoryOpen && (
         <VersionHistorySidebar
           history={history}
@@ -1302,13 +1380,13 @@ export default function App() {
       {draggedNewBlockType && dragCoords && (
         <div
           id="drag-preview-ghost"
-          className="fixed pointer-events-none z-[9999] select-none backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-2 border-blue-500/80 rounded-xl px-3 py-2 flex items-center gap-2 shadow-xl animate-fade-in transition-all"
+          className="fixed pointer-events-none z-[9999] select-none backdrop-blur-md bg-ink/80 border-2 border-gold/80 rounded-xl px-3 py-2 flex items-center gap-2 shadow-xl animate-fade-in transition-all"
           style={{
             left: `${dragCoords.x + 12}px`,
             top: `${dragCoords.y + 12}px`,
           }}
         >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-2xs">
+          <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/20 text-gold flex items-center justify-center shadow-sm">
             {draggedNewBlockType === 'header' && <Heading className="h-4 w-4" />}
             {draggedNewBlockType === 'text' && <Type className="h-4 w-4" />}
             {draggedNewBlockType === 'image' && <ImageIcon className="h-4 w-4" />}
@@ -1319,10 +1397,10 @@ export default function App() {
             {draggedNewBlockType === 'footer' && <FileText className="h-4 w-4" />}
           </div>
           <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+            <span className="text-[11px] font-mono font-bold text-text-on-ink uppercase tracking-wider">
               {draggedNewBlockType} Block
             </span>
-            <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5">
+            <span className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase tracking-widest leading-none mt-0.5">
               Drop onto Canvas
             </span>
           </div>

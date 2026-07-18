@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Type, 
-  Image as ImageIcon, 
-  Square, 
-  Heading, 
-  Minus, 
-  Share2, 
-  FileText, 
-  Sparkles, 
+import {
+  Type,
+  Image as ImageIcon,
+  Square,
+  Minus,
   Settings as SettingsIcon, 
   Layers, 
   Layout, 
@@ -27,7 +23,9 @@ import {
   Eye,
   Link,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Shapes,
+  Sparkles
 } from 'lucide-react';
 import { BlockType, EmailTemplate, EmailBlock, GlobalSettings, SharedBlock, MediaAsset } from '../types';
 import { STARTER_TEMPLATES } from '../utils/templates';
@@ -78,7 +76,7 @@ export default function Sidebar({
   currentRole = 'owner',
   onChangeRole
 }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState<'blocks' | 'patterns' | 'media' | 'styles' | 'presets' | 'workflow'>('blocks');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'elements' | 'patterns' | 'media' | 'styles' | 'presets' | 'workflow'>('blocks');
   
   // Search & filter states
   const [patternSearch, setPatternSearch] = useState('');
@@ -136,6 +134,26 @@ export default function Sidebar({
     const selectedTheme = THEME_PRESETS.find(t => t.id === themeId);
     if (!selectedTheme) return;
 
+    // Apply Brand Kit to entire template (sweep)
+    const updatedBlocks = template.blocks.map(block => {
+      const newStyle = { ...block.style };
+      
+      // Clear specific colors to let the theme override them
+      if (block.type === 'header' || block.type === 'text' || block.type === 'quote' || block.type === 'footer') {
+        delete newStyle.color;
+      } else if (block.type === 'button') {
+        delete newStyle.backgroundColor;
+      }
+      
+      // Update font family
+      delete newStyle.fontFamily;
+      
+      return {
+        ...block,
+        style: newStyle
+      };
+    });
+
     onUpdateTemplate({
       themeId: selectedTheme.id,
       globalSettings: {
@@ -148,7 +166,8 @@ export default function Sidebar({
         },
         contentBg: selectedTheme.colors.background,
         backgroundColor: selectedTheme.colors.background === '#ffffff' ? '#f1f5f9' : '#0f172a'
-      }
+      },
+      blocks: updatedBlocks,
     });
   };
 
@@ -159,6 +178,7 @@ export default function Sidebar({
       layout: [],
       commerce: [],
       social: [],
+      elements: [],
       advanced: []
     };
     
@@ -240,11 +260,11 @@ export default function Sidebar({
     <div id="editor-sidebar" className="w-full lg:w-80 rounded-xl border border-ink-2/50 bg-ink flex flex-col h-full overflow-hidden shadow-xl select-none text-text-on-ink">
       {/* 2-Row Bento Style Tab Selection grid */}
       <div className="p-3 border-b border-ink-2/40 bg-ink">
-        <div className="grid grid-cols-3 gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50">
+        <div className="grid grid-cols-4 gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50">
           <button
             id="tab-blocks"
             onClick={() => setActiveTab('blocks')}
-            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+            className={`py-1.5 text-[9px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
               activeTab === 'blocks'
                 ? 'bg-ink text-gold border border-gold/15 shadow-sm'
                 : 'text-text-on-ink-muted hover:text-text-on-ink'
@@ -256,9 +276,23 @@ export default function Sidebar({
           </button>
           
           <button
+            id="tab-elements"
+            onClick={() => setActiveTab('elements')}
+            className={`py-1.5 text-[9px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+              activeTab === 'elements'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
+            }`}
+            title="Shapes, icons, stickers & lines"
+          >
+            <Shapes className="h-3.5 w-3.5" />
+            <span>Elements</span>
+          </button>
+          
+          <button
             id="tab-patterns"
             onClick={() => setActiveTab('patterns')}
-            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+            className={`py-1.5 text-[9px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
               activeTab === 'patterns'
                 ? 'bg-ink text-gold border border-gold/15 shadow-sm'
                 : 'text-text-on-ink-muted hover:text-text-on-ink'
@@ -272,15 +306,15 @@ export default function Sidebar({
           <button
             id="tab-media"
             onClick={() => setActiveTab('media')}
-            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+            className={`py-1.5 text-[9px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
               activeTab === 'media'
                 ? 'bg-ink text-gold border border-gold/15 shadow-sm'
                 : 'text-text-on-ink-muted hover:text-text-on-ink'
             }`}
-            title="Shared Image asset library"
+            title="Shared Image asset library & AI Generator"
           >
             <ImageIcon className="h-3.5 w-3.5" />
-            <span>Media</span>
+            <span>Photos</span>
           </button>
         </div>
 
@@ -339,7 +373,7 @@ export default function Sidebar({
         {activeTab === 'blocks' && (
           <div className="space-y-5">
             <div>
-              <h3 className="text-sm font-serif font-bold text-paper flex items-center gap-1">
+              <h3 className="text-sm font-serif font-bold text-text-on-ink flex items-center gap-1">
                 Content Inserter
               </h3>
               <p className="text-[11px] text-text-on-ink-muted mt-1 leading-relaxed">
@@ -348,7 +382,7 @@ export default function Sidebar({
             </div>
 
             {Object.entries(categorizedBlocks).map(([category, blocks]) => {
-              if (blocks.length === 0) return null;
+              if (category === 'elements' || blocks.length === 0) return null;
               return (
                 <div key={category} className="space-y-2">
                   <h4 className="text-[10px] font-mono font-bold text-gold/85 uppercase tracking-widest border-b border-ink-2/50 pb-1">
@@ -388,11 +422,58 @@ export default function Sidebar({
           </div>
         )}
 
+        {/* 1.5. ELEMENTS TAB */}
+        {activeTab === 'elements' && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-serif font-bold text-text-on-ink flex items-center gap-1">
+                Elements Library
+              </h3>
+              <p className="text-[11px] text-text-on-ink-muted mt-1 leading-relaxed">
+                Add shapes, icons, stickers, and lines.
+              </p>
+            </div>
+
+            {Object.entries(categorizedBlocks).map(([category, blocks]) => {
+              if (category !== 'elements' || blocks.length === 0) return null;
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {blocks.map((block) => {
+                      const IconComponent = block.icon;
+                      return (
+                        <div
+                          id={`block-item-${block.type}`}
+                          key={block.type}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, block.type)}
+                          onClick={() => onAddBlock(block.type)}
+                          className="p-3 border border-dashed border-ink-2 rounded-lg flex flex-col items-center justify-center text-center hover:border-gold/50 hover:bg-ink-2/30 cursor-grab active:cursor-grabbing transition-all relative group bg-ink-2/15"
+                        >
+                          <div className="w-9 h-9 rounded bg-ink border border-ink-2 flex items-center justify-center text-text-on-ink-muted group-hover:bg-ink-2 group-hover:text-gold transition-colors">
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-text-on-ink-muted mt-2 group-hover:text-paper transition-colors">
+                            {block.label}
+                          </span>
+                          <span className="text-[9px] text-text-on-ink-muted/75 line-clamp-1 mt-0.5 px-1">
+                            {block.description}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* 2. PATTERNS & SYNCED BLOCKS TAB */}
         {activeTab === 'patterns' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-serif font-bold text-paper">Patterns & Global Blocks</h3>
+              <h3 className="text-sm font-serif font-bold text-text-on-ink">Patterns & Global Blocks</h3>
               <p className="text-[11px] text-text-on-ink-muted mt-1 leading-relaxed">
                 Insert pre-designed layouts. <strong className="text-gold font-semibold">Synced Global Blocks</strong> stay synchronized across all templates.
               </p>
@@ -503,12 +584,13 @@ export default function Sidebar({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-sm font-serif font-bold text-paper">Asset Media Library</h3>
+                <h3 className="text-sm font-serif font-bold text-text-on-ink">Asset Media Library</h3>
                 <p className="text-[11px] text-text-on-ink-muted mt-0.5">Manage and inject brand images.</p>
               </div>
               <button
+                id="btn-toggle-add-media"
                 onClick={() => setShowAddMediaForm(!showAddMediaForm)}
-                className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-gold text-ink rounded hover:bg-gold/90 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider border border-gold text-gold hover:bg-gold hover:text-ink rounded transition-all cursor-pointer"
               >
                 {showAddMediaForm ? 'Cancel' : 'Add Image'}
               </button>
@@ -564,9 +646,30 @@ export default function Sidebar({
                     className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/40"
                   />
                 </div>
+                <div className="pt-1 border-t border-ink-2/40">
+                  <label className="block text-[9px] font-mono font-bold text-gold uppercase tracking-widest mb-1">Or Upload Local File</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const base64 = event.target?.result as string;
+                          setNewMediaUrl(base64);
+                          if (!newMediaName) setNewMediaName(file.name);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-[10px] text-text-on-ink-muted file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-gold file:text-[10px] file:font-bold file:bg-transparent file:text-gold hover:file:bg-gold hover:file:text-ink cursor-pointer"
+                  />
+                </div>
                 <button
+                  id="btn-save-media-asset"
                   type="submit"
-                  className="w-full py-1.5 bg-gold hover:bg-gold/90 text-ink font-mono font-bold text-xs uppercase tracking-wider rounded transition-all cursor-pointer"
+                  className="w-full py-1.5 bg-gold hover:bg-gold-hover text-ink font-mono font-bold text-xs uppercase tracking-wider rounded transition-all cursor-pointer shadow-lg shadow-gold/20"
                 >
                   Save Image to Account
                 </button>
@@ -638,7 +741,7 @@ export default function Sidebar({
                       <button
                         onClick={() => handleApplyMediaToSelected(asset.url)}
                         disabled={!selectedBlock || !['image', 'productCard', 'hero', 'imageGrid'].includes(selectedBlock.type)}
-                        className="col-span-2 py-1 px-1 text-[9px] bg-gold/10 hover:bg-gold text-gold hover:text-ink rounded font-bold disabled:opacity-35 disabled:pointer-events-none transition-colors cursor-pointer"
+                        className="col-span-2 py-1 px-1 text-[9px] border border-gold text-gold hover:bg-gold hover:text-ink rounded font-bold disabled:opacity-35 disabled:pointer-events-none transition-all cursor-pointer"
                         title="Inject into current selected canvas block"
                       >
                         Apply
@@ -671,7 +774,7 @@ export default function Sidebar({
         {activeTab === 'styles' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-serif font-bold text-paper">Global Style Tokens</h3>
+              <h3 className="text-sm font-serif font-bold text-text-on-ink">Global Style Tokens</h3>
               <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
                 Centralized theme and design variables mapped across all dynamic components.
               </p>
@@ -835,7 +938,7 @@ export default function Sidebar({
         {activeTab === 'presets' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-serif font-bold text-paper">Starter Foundations</h3>
+              <h3 className="text-sm font-serif font-bold text-text-on-ink">Starter Foundations</h3>
               <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
                 Load high-converting templates. This will replace active canvas elements.
               </p>
@@ -874,7 +977,7 @@ export default function Sidebar({
         {activeTab === 'workflow' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-serif font-bold text-paper">Role & Approvals</h3>
+              <h3 className="text-sm font-serif font-bold text-text-on-ink">Role & Approvals</h3>
               <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
                 Enforce marketing locks, roles compliance, and approval review tracking.
               </p>
