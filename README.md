@@ -6,7 +6,7 @@
 
 <p align="center">
 <b>Build beautiful, responsive email templates visually—with AI.</b><br>
-Drag. Drop. Generate. Preview. Export.
+Drag, drop, generate, preview, and export production-ready emails in minutes.
 </p>
 
 <p align="center">
@@ -24,9 +24,9 @@ Drag. Drop. Generate. Preview. Export.
 
 **Dost_MailKit** is a professional, AI-powered visual email builder designed for marketers, designers, developers, and product teams. 
 
-Forget manually coding HTML tables or struggling with rigid email builders. With Dost_MailKit, you can drag and drop components, customize them with a high-fidelity visual inspector, leverage AI to generate layouts and copy, and export production-ready, highly compatible HTML/MJML.
+Forget manually coding complex HTML tables or struggling with rigid, outdated email builders. Dost_MailKit provides an intuitive drag-and-drop interface, a high-fidelity visual inspector, and powerful AI integration to streamline your email production workflow—from ideation to final, production-ready code.
 
-Whether you're crafting newsletters, product launches, event invitations, or transactional emails, Dost_MailKit streamlines your workflow into a fast, creative, and precise experience.
+Whether you're crafting newsletters, product launches, event invitations, or transactional emails, Dost_MailKit empowers you to build beautiful, highly compatible emails in record time.
 
 ---
 
@@ -34,11 +34,11 @@ Whether you're crafting newsletters, product launches, event invitations, or tra
 
 Dost_MailKit bridges the gap between design freedom and email compatibility, providing:
 
-- 🎨 **Visual-First Editor**: Intuitive drag-and-drop builder with high-fidelity control.
-- 🤖 **AI Design Assistant**: Generate complete email structures from simple natural language prompts.
-- ✍️ **Intelligent Copywriter**: Create subject lines, headlines, and body copy in seconds.
-- 📱 **Responsive Preview**: Real-time view for desktop, tablet, and mobile.
-- 📤 **Clean Code Export**: Generate production-ready HTML, MJML, or PNG snapshots.
+- 🎨 **Visual-First Editor**: Intuitive drag-and-drop builder with high-fidelity control over every element.
+- 🤖 **AI Design Assistant**: Generate complete, structured email layouts from simple natural language prompts.
+- ✍️ **Intelligent Copywriter**: Instantly create subject lines, headlines, and engaging body copy.
+- 📱 **Responsive Preview**: Real-time rendering for desktop, tablet, and mobile views.
+- 📤 **Clean Code Export**: Generate production-ready, inline-styled HTML, MJML, or high-res PNG snapshots.
 - ⚡ **Streamlined Workflow**: Autosave, version history, and global brand management.
 
 ---
@@ -46,10 +46,14 @@ Dost_MailKit bridges the gap between design freedom and email compatibility, pro
 # 🚀 Key Features
 
 ## 🎨 Visual Drag & Drop Builder
-Design without writing HTML. Drag, rearrange, resize, and configure everything from typography and spacing to complex sections and product cards.
+Design without writing HTML. Drag, rearrange, resize, and configure everything from typography and spacing to complex multi-column sections and product cards.
 
 ## 🖼️ Enhanced Image Tools
-Take full control over your images: apply professional CSS filters (grayscale, sepia, contrast, brightness), crop to perfect aspect ratios (16:9, 4:3, 1:1), add interactive hover effects, and easily swap assets using the integrated Media Library.
+Take full control over your images:
+- Apply professional CSS filters (grayscale, sepia, contrast, brightness).
+- Crop to perfect aspect ratios (16:9, 4:3, 1:1).
+- Add interactive hover effects.
+- Easily swap assets using the integrated Media Library.
 
 ## 💎 Brand Identity & Global Settings
 Maintain consistency across all campaigns with global typography controls and a shared brand palette (Primary, Secondary, Accent). Switch seamlessly between design modes to suit your workflow.
@@ -101,17 +105,40 @@ Access the application at `http://localhost:5173`.
 
 ---
 
+# 🔮 Future Roadmap
+
+We have big plans to make Dost_MailKit even more powerful:
+- [ ] Gmail integration
+- [ ] Direct publishing to Mailchimp/HubSpot/SendGrid
+- [ ] Collaborative real-time editing
+- [ ] Template & Component marketplace
+- [ ] Figma import
+- [ ] AI accessibility checker
+
+---
+
 # 🤝 Contributing
 
-Contributions are always welcome.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-You can help by:
-- Reporting bugs
-- Improving UX
-- Adding templates
-- Optimizing generated HTML
-- Creating new AI workflows
-- Improving accessibility
+### How to Contribute
+1. **Fork the Project**
+2. **Create your Feature Branch** (`git checkout -b feature/AmazingFeature`)
+3. **Commit your Changes** (`git commit -m 'Add some AmazingFeature'`)
+4. **Push to the Branch** (`git push origin feature/AmazingFeature`)
+5. **Open a Pull Request**
+
+### Areas for Improvement
+- **Bug Reporting**: If you find a bug, please open an issue.
+- **Templates**: Design new starter templates for different use cases.
+- **AI Workflows**: Experiment with new prompt engineering for layout/copy.
+- **Accessibility**: Improve generated HTML accessibility.
+- **Documentation**: Help us make this README even better!
+
+---
+
+# 📜 License
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
@@ -120,8 +147,6 @@ You can help by:
 ### Dostam 
 
 Building AI-powered tools that help people create faster, better, and smarter.
-
----
 
 <p align="center">
 <b>Design beautifully.</b><br>
