@@ -15,7 +15,6 @@ Drag, drop, generate, preview, and export production-ready emails in minutes.
 <img src="https://img.shields.io/badge/Vite-6-purple" />
 <img src="https://img.shields.io/badge/Tailwind-v4-38B2AC" />
 <img src="https://img.shields.io/badge/Gemini-AI-orange" />
-<img src="https://img.shields.io/badge/License-MIT-green" />
 </p>
 
 ---
@@ -135,10 +134,6 @@ Contributions are what make the open-source community such an amazing place to l
 - **Accessibility**: Improve generated HTML accessibility.
 - **Documentation**: Help us make this README even better!
 
----
-
-# 📜 License
-Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
