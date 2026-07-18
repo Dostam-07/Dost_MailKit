@@ -32,10 +32,11 @@ import {
   Link,
   Grid
 } from 'lucide-react';
-import { EmailTemplate, EmailBlock, BlockType, UndoRedoState } from './types';
+import { EmailTemplate, EmailBlock, BlockType, UndoRedoState, SharedBlock, MediaAsset } from './types';
 import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
 import Inspector from './components/Inspector';
+import Postmark from './components/Postmark';
 import CodeViewer from './components/CodeViewer';
 import PreviewModal from './components/PreviewModal';
 import SmartLayoutModal from './components/SmartLayoutModal';
@@ -55,6 +56,135 @@ export default function App() {
   // Main Template state - defaults to the first starter template
   const [template, setTemplate] = useState<EmailTemplate>(STARTER_TEMPLATES[0]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
+  // PRD v2 Additions State
+  const [currentRole, setCurrentRole] = useState<'owner' | 'editor' | 'contributor'>('owner');
+
+  const [sharedBlocks, setSharedBlocks] = useState<SharedBlock[]>(() => {
+    try {
+      const stored = localStorage.getItem('easy-email-shared-blocks');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error(e);
+    }
+    // Default initial mock patterns and global synced blocks!
+    return [
+      {
+        id: 'shared-pattern-hero-dark',
+        name: 'Midnight Premium Hero Banner',
+        category: 'general',
+        isGlobal: false,
+        usedInTemplateIds: [],
+        block: {
+          id: 'shared-hero-block',
+          type: 'hero',
+          style: {
+            paddingTop: 40,
+            paddingBottom: 40,
+            paddingLeft: 20,
+            paddingRight: 20,
+            color: '#ffffff',
+            backgroundColor: '#0f172a'
+          },
+          properties: {
+            src: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1000',
+            overlayPosition: 'center',
+            overlayScrim: 'rgba(15, 23, 42, 0.7)',
+            alt: 'Midnight design banner cover'
+          },
+          content: '<h1 style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">EXQUISITE MODERN CRAFT</h1><p style="font-size: 14px; opacity: 0.85;">Discover our collection of timeless premium pieces, designed for the minimalist enthusiast.</p>'
+        }
+      },
+      {
+        id: 'shared-global-footer-brand',
+        name: 'Brand Compliance Global Footer',
+        category: 'footer',
+        isGlobal: true,
+        usedInTemplateIds: [],
+        block: {
+          id: 'shared-footer-block',
+          type: 'footer',
+          style: {
+            paddingTop: 30,
+            paddingBottom: 30,
+            paddingLeft: 20,
+            paddingRight: 20,
+            color: '#64748b',
+            backgroundColor: '#f8fafc'
+          },
+          properties: {
+            socialLinks: [
+              { platform: 'facebook', url: 'https://facebook.com' },
+              { platform: 'twitter', url: 'https://twitter.com' },
+              { platform: 'website', url: 'https://brand.com' }
+            ]
+          },
+          content: '<p style="font-size: 11px; margin-bottom: 8px;">© 2026 Acme Brand Inc. All rights reserved.</p><p style="font-size: 10px; opacity: 0.8;">You received this because you are subscribed to brand updates. <a href="#" style="color: #3b82f6; text-decoration: underline;">Unsubscribe instantly</a></p>'
+        }
+      }
+    ];
+  });
+
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(() => {
+    try {
+      const stored = localStorage.getItem('easy-email-media-assets');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error(e);
+    }
+    // High-quality default Unsplash items
+    return [
+      {
+        id: 'media-watch-minimal',
+        name: 'Minimalist White Watch',
+        url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
+        category: 'products',
+        altText: 'Premium white ceramic watch dial on modern grey background',
+        createdAt: Date.now()
+      },
+      {
+        id: 'media-cam-classic',
+        name: 'Classic Vintage Camera',
+        url: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600',
+        category: 'products',
+        altText: 'Retro yellow-toned mechanical rangefinder film camera',
+        createdAt: Date.now()
+      },
+      {
+        id: 'media-headphones-gold',
+        name: 'Premium Wireless Headphones',
+        url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
+        category: 'products',
+        altText: 'Golden-rimmed wireless over-ear noise-cancelling headphones',
+        createdAt: Date.now()
+      },
+      {
+        id: 'media-desk-minimal',
+        name: 'Modern Workspace Tech Desk',
+        url: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1000',
+        category: 'banners',
+        altText: 'Clean workspace desk with iMac, mechanical keyboard, and ceramic cup',
+        createdAt: Date.now()
+      },
+      {
+        id: 'media-logo-acme',
+        name: 'Acme Minimalist Logo',
+        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200',
+        category: 'logos',
+        altText: 'Geometric corporate brand mark design abstract art',
+        createdAt: Date.now()
+      }
+    ];
+  });
+
+  // Persist sharedBlocks and mediaAssets whenever they change
+  useEffect(() => {
+    localStorage.setItem('easy-email-shared-blocks', JSON.stringify(sharedBlocks));
+  }, [sharedBlocks]);
+
+  useEffect(() => {
+    localStorage.setItem('easy-email-media-assets', JSON.stringify(mediaAssets));
+  }, [mediaAssets]);
 
   // Drag and drop preview ghost element state
   const [draggedNewBlockType, setDraggedNewBlockType] = useState<BlockType | null>(null);
@@ -641,6 +771,71 @@ export default function App() {
     setSelectedBlockId(null);
   };
 
+  // PRD v2 CRUD Handlers
+  const handleSaveAsShared = (block: EmailBlock, name: string, isGlobal: boolean) => {
+    const newShared: SharedBlock = {
+      id: isGlobal ? `shared-global-${Date.now()}` : `shared-pattern-${Date.now()}`,
+      name,
+      category: block.type === 'header' || block.type === 'footer' ? block.type : 'general',
+      isGlobal,
+      usedInTemplateIds: [],
+      block: { ...block, id: `block-template-${Date.now()}` } // clean ID
+    };
+    
+    setSharedBlocks(prev => [newShared, ...prev]);
+    
+    if (isGlobal) {
+      handleUpdateBlock(block.id, { symbolId: newShared.id });
+      showToast(`Saved and linked! "${name}" is now a Synced Global Block.`, 'success');
+    } else {
+      showToast(`Saved "${name}" as a reusable custom Pattern!`, 'success');
+    }
+  };
+
+  const handleDisconnectShared = (blockId: string) => {
+    handleUpdateBlock(blockId, { symbolId: undefined });
+    showToast('Unlinked from global block pattern! This block can now be edited independently.', 'info');
+  };
+
+  const handleAddBlockFromShared = (sharedBlockId: string) => {
+    const shared = sharedBlocks.find(sb => sb.id === sharedBlockId);
+    if (!shared) return;
+    
+    const newBlock: EmailBlock = {
+      ...JSON.parse(JSON.stringify(shared.block)),
+      id: `${shared.block.type}-${Date.now()}`,
+      symbolId: shared.isGlobal ? shared.id : undefined
+    };
+    
+    const updated = {
+      ...template,
+      blocks: [...template.blocks, newBlock]
+    };
+    saveStateToHistory(updated);
+    setTemplate(updated);
+    showToast(`Added block pattern "${shared.name}" to your canvas.`, 'success');
+  };
+
+  const handleDeleteSharedBlock = (id: string) => {
+    setSharedBlocks(prev => prev.filter(p => p.id !== id));
+    showToast('Pattern removed from your saved library.', 'info');
+  };
+
+  const handleAddMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => {
+    const newAsset: MediaAsset = {
+      ...asset,
+      id: `media-asset-${Date.now()}`,
+      createdAt: Date.now()
+    };
+    setMediaAssets(prev => [newAsset, ...prev]);
+    showToast(`Added "${asset.name}" to media library.`, 'success');
+  };
+
+  const handleDeleteMediaAsset = (id: string) => {
+    setMediaAssets(prev => prev.filter(m => m.id !== id));
+    showToast('Image removed from media library.', 'info');
+  };
+
   const handleCreateSnapshot = () => {
     setSnapshots(s => [
       { id: Date.now().toString(), timestamp: Date.now(), template: JSON.parse(JSON.stringify(template)) },
@@ -665,36 +860,37 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen w-screen bg-ink text-text-on-ink font-sans overflow-hidden">
       
       {/* SaaS App Header Tool Rail */}
-      <header className="h-16 border-b border-slate-200/80 dark:border-slate-850 bg-white dark:bg-slate-900 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 shadow-xs">
+      <header className="h-16 border-b border-ink-2/40 bg-ink flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <button
             id="btn-back-home"
             onClick={handleGoBack}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-ink-2 text-text-on-ink-muted hover:text-text-on-ink transition-colors cursor-pointer"
             title="Back to Home Dashboard"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <img 
-            src="/dost_mailkit_icon.jpg" 
-            alt="Dost_MailKit" 
-            className="w-8 h-8 rounded-lg object-cover shadow-sm transition-all hover:scale-105 shrink-0"
-          />
-          <span className="font-bold text-slate-800 dark:text-slate-200 tracking-tight text-sm uppercase tracking-wider hidden md:inline">Dost_MailKit</span>
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block"></div>
+          
+          {/* Postmark logomark & wordmark */}
+          <div className="w-7 h-7 rounded-full bg-gold flex items-center justify-center font-serif text-ink font-bold text-xs shadow-inner">
+            D
+          </div>
+          <span className="font-serif font-semibold text-sm tracking-tight text-text-on-ink hidden md:inline">Dost_MailKit</span>
+          
+          <div className="h-4 w-px bg-ink-2/50 mx-1 hidden md:block"></div>
           <div className="flex flex-col">
             <input 
               type="text" 
               value={template.subject} 
               onChange={(e) => updateTemplate({ subject: e.target.value })}
-              className="text-xs sm:text-sm font-semibold border-none focus:ring-0 p-0 text-slate-700 dark:text-slate-300 bg-transparent w-40 sm:w-64 outline-none placeholder-slate-400"
-              placeholder="Summer Solstice Sale 2024"
+              className="text-xs sm:text-sm font-semibold border-none focus:ring-0 p-0 text-text-on-ink bg-transparent w-40 sm:w-64 outline-none placeholder-text-on-ink-muted/30 focus:border-b focus:border-gold"
+              placeholder="Summer Solstice Sale"
               title="Click to edit subject line"
             />
-            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest leading-none mt-0.5">Subject Line</span>
+            <span className="text-[8px] text-text-on-ink-muted/50 font-bold uppercase tracking-widest leading-none mt-0.5">Subject Line</span>
           </div>
         </div>
 
@@ -702,12 +898,12 @@ export default function App() {
         <div className="flex items-center gap-4">
           
           {/* History Stack Toggles */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
+          <div className="flex items-center gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50">
             <button
               id="btn-undo"
               onClick={handleUndo}
               disabled={history.past.length === 0}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+              className="p-1.5 rounded text-text-on-ink-muted hover:text-text-on-ink disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
               title="Undo Action (Ctrl+Z)"
             >
               <Undo2 className="h-4 w-4" />
@@ -716,7 +912,7 @@ export default function App() {
               id="btn-redo"
               onClick={handleRedo}
               disabled={history.future.length === 0}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+              className="p-1.5 rounded text-text-on-ink-muted hover:text-text-on-ink disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
               title="Redo Action (Ctrl+Y)"
             >
               <Redo2 className="h-4 w-4" />
@@ -724,7 +920,7 @@ export default function App() {
             <button
               id="btn-history"
               onClick={() => setIsVersionHistoryOpen(true)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer"
+              className="p-1.5 rounded text-text-on-ink-muted hover:text-text-on-ink transition-all cursor-pointer"
               title="Version History"
             >
               <Clock className="h-4 w-4" />
@@ -734,14 +930,14 @@ export default function App() {
           {/* Sync / Autosave Indicator */}
           <div className="flex items-center gap-2.5 text-xs">
             {autosaveStatus === 'saving' ? (
-              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-900/40 font-semibold animate-pulse">
+              <div className="flex items-center gap-1.5 text-gold bg-gold/10 px-2.5 py-1 rounded-full border border-gold/30 font-semibold animate-pulse font-mono">
                 <RefreshCw className="h-3 w-3 animate-spin" />
-                <span>Saving...</span>
+                <span>SAVING...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-900/40 font-semibold">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>Autosaved {lastSavedTime && `at ${lastSavedTime}`}</span>
+              <div className="flex items-center gap-1.5 text-text-on-ink-muted bg-ink-2 px-2.5 py-1 rounded-full border border-ink-2/50 font-semibold font-mono text-[10px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                <span>AUTOSAVED {lastSavedTime && `AT ${lastSavedTime.toUpperCase()}`}</span>
               </div>
             )}
 
@@ -749,7 +945,7 @@ export default function App() {
             <button
               id="btn-manual-save"
               onClick={handleManualSave}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
+              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer"
               title="Save manually to Local Storage for peace of mind"
             >
               <Save className="h-3 w-3" />
@@ -758,7 +954,7 @@ export default function App() {
             <button
               id="btn-download-image"
               onClick={handleDownloadImage}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer hidden md:flex"
+              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
               title="Download Canvas as Image"
             >
               <ImageIcon className="h-3 w-3" />
@@ -767,7 +963,7 @@ export default function App() {
             <button
               id="btn-validate-email"
               onClick={handleValidateEmail}
-              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer hidden md:flex"
+              className="flex items-center gap-1 py-1 px-2.5 text-xs font-semibold rounded-lg bg-ink-2 hover:bg-ink-2/80 text-text-on-ink-muted hover:text-text-on-ink transition-all border border-ink-2/50 cursor-pointer hidden md:flex"
               title="Validate Links & Images"
             >
               <Link className="h-3 w-3" />
@@ -775,27 +971,27 @@ export default function App() {
             </button>
           </div>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-5 w-px bg-ink-2/50" />
 
           {/* Smart Layout AI Button */}
           <button
             id="btn-smart-layout"
             onClick={() => setIsSmartLayoutOpen(true)}
-            className="flex items-center gap-1.5 py-1.5 px-3 text-xs font-extrabold rounded-xl transition-all bg-gradient-to-r from-blue-650 to-indigo-650 hover:from-blue-700 hover:to-indigo-750 text-white shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 py-1.5 px-3 text-xs font-extrabold rounded-lg transition-all border border-gold/40 hover:border-gold text-gold hover:bg-gold/5 cursor-pointer shrink-0"
             title="AI Smart Layout: Harmonize color theme and professional spacing improvements"
           >
-            <Sparkles className="h-3.5 w-3.5 animate-pulse text-blue-100 shrink-0" />
+            <Sparkles className="h-3.5 w-3.5 animate-pulse text-gold shrink-0" />
             <span>Smart Layout</span>
           </button>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-5 w-px bg-ink-2/50" />
 
           {/* View Toggles */}
           <div className="flex items-center gap-1">
             <button
               id="btn-toggle-grid"
               onClick={() => setShowGrid(!showGrid)}
-              className={`p-2 rounded-xl transition-colors border border-transparent cursor-pointer ${showGrid ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 dark:border-slate-800'}`}
+              className={`p-2 rounded-lg transition-colors border border-transparent cursor-pointer ${showGrid ? 'bg-gold/10 text-gold border-gold/20' : 'text-text-on-ink-muted hover:text-text-on-ink hover:bg-ink-2'}`}
               title={showGrid ? 'Hide Grid' : 'Show Grid'}
             >
               <Grid className="h-4 w-4" />
@@ -803,28 +999,28 @@ export default function App() {
             <button
               id="btn-toggle-theme"
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent dark:border-slate-800 cursor-pointer"
+              className="p-2 rounded-lg text-text-on-ink-muted hover:text-text-on-ink hover:bg-ink-2 transition-colors border border-transparent cursor-pointer"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? (
                 <Moon className="h-4 w-4" />
               ) : (
-                <Sun className="h-4 w-4 text-amber-500" />
+                <Sun className="h-4 w-4 text-gold" />
               )}
             </button>
           </div>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-5 w-px bg-ink-2/50" />
 
           {/* Core View Selector Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
+          <div className="flex bg-ink-2 p-1 rounded-lg border border-ink-2/50">
             <button
               id="btn-mode-design"
               onClick={() => setViewMode('design')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold rounded transition-all cursor-pointer ${
                 viewMode === 'design'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/30 dark:border-slate-700/50'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -833,10 +1029,10 @@ export default function App() {
             <button
               id="btn-mode-split"
               onClick={() => setViewMode('split')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold rounded transition-all cursor-pointer ${
                 viewMode === 'split'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/30 dark:border-slate-700/50'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
             >
               <Code2 className="h-3.5 w-3.5" />
@@ -845,10 +1041,10 @@ export default function App() {
             <button
               id="btn-mode-developer"
               onClick={() => setViewMode('developer')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold rounded transition-all cursor-pointer ${
                 viewMode === 'developer'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/30 dark:border-slate-700/50'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
             >
               <FileCode className="h-3.5 w-3.5" />
@@ -859,25 +1055,25 @@ export default function App() {
           <button
             id="btn-export-html"
             onClick={handleExportHTML}
-            className="flex items-center gap-1.5 py-2 px-4 text-xs font-bold rounded-xl transition-all bg-blue-600 text-white hover:bg-blue-700 shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 py-2 px-4 text-xs font-extrabold rounded-lg transition-all bg-gold text-ink hover:bg-gold/90 shadow-md cursor-pointer"
           >
-            <Download className="h-3.5 w-3.5 text-blue-100" />
+            <Download className="h-3.5 w-3.5 text-ink font-extrabold" />
             Export HTML
           </button>
 
           <button
             id="btn-preview-and-test"
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-1.5 py-2 px-4 text-xs font-bold rounded-xl transition-all bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 shadow-xs cursor-pointer border border-transparent dark:border-slate-700"
+            className="flex items-center gap-1.5 py-2 px-4 text-xs font-bold rounded-lg transition-all bg-transparent text-text-on-ink border border-ink-2 hover:bg-ink-2 hover:border-gold/30 cursor-pointer"
           >
-            <Inbox className="h-3.5 w-3.5 text-slate-300 dark:text-slate-400" />
+            <Inbox className="h-3.5 w-3.5 text-text-on-ink-muted" />
             Preview & Test
           </button>
         </div>
       </header>
 
       {/* Main workspace layout: Styled as a Bento Grid with gap, paddings, and background */}
-      <div className="flex-1 flex flex-wrap lg:flex-nowrap overflow-y-auto lg:overflow-hidden min-h-0 p-2 sm:p-4 gap-2 sm:gap-4 bg-[#F8F9FA] dark:bg-slate-950 pb-24 lg:pb-4 relative">
+      <div className="flex-1 flex flex-wrap lg:flex-nowrap overflow-y-auto lg:overflow-hidden min-h-0 p-2 sm:p-4 gap-2 sm:gap-4 bg-ink-2 pb-24 lg:pb-4 relative">
         
         {/* Left Column: Sidebar Component (Always active for dragging, presets, global settings) */}
         <div className={`${mobileWorkspaceView === 'elements' ? 'flex flex-1' : 'hidden'} lg:flex lg:w-80 shrink-0 h-full min-w-0`}>
@@ -889,6 +1085,15 @@ export default function App() {
             onDragStartNewBlock={setDraggedNewBlockType}
             selectedBlockId={selectedBlockId}
             onUpdateBlock={handleUpdateBlock}
+            sharedBlocks={sharedBlocks}
+            onAddSharedBlock={(name, category, isGlobal, block) => handleSaveAsShared(block, name, isGlobal)}
+            onDeleteSharedBlock={handleDeleteSharedBlock}
+            onAddBlockFromShared={handleAddBlockFromShared}
+            mediaAssets={mediaAssets}
+            onAddMediaAsset={handleAddMediaAsset}
+            onDeleteMediaAsset={handleDeleteMediaAsset}
+            currentRole={currentRole}
+            onChangeRole={setCurrentRole}
           />
         </div>
 
@@ -906,6 +1111,9 @@ export default function App() {
                 onDeleteBlock={handleDeleteBlock}
                 onCloneBlock={handleCloneBlock}
                 showGrid={showGrid}
+                sharedBlocks={sharedBlocks}
+                onSaveAsShared={handleSaveAsShared}
+                onDisconnectShared={handleDisconnectShared}
               />
             </div>
 
@@ -935,6 +1143,9 @@ export default function App() {
                   onDeleteBlock={handleDeleteBlock}
                   onCloneBlock={handleCloneBlock}
                   showGrid={showGrid}
+                  sharedBlocks={sharedBlocks}
+                  onSaveAsShared={handleSaveAsShared}
+                  onDisconnectShared={handleDisconnectShared}
                 />
               </div>
               <div className="hidden lg:block w-[500px] shrink-0 h-full select-text">
@@ -1028,19 +1239,32 @@ export default function App() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className={`fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg border transition-all ${
+            className={`fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border transition-all ${
               toast.type === 'success' 
-                ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300' 
+                ? 'bg-paper border-paper-2 text-ink shadow-[3px_3px_0px_rgba(22,35,59,0.15)]' 
                 : toast.type === 'error' 
                   ? 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/60 text-red-800 dark:text-red-300' 
                   : 'bg-blue-50 dark:bg-blue-950/80 border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-300'
             }`}
           >
-            {toast.type === 'success' && <Check className="h-4 w-4 text-emerald-500" />}
-            <span className="text-xs font-bold">{toast.message}</span>
+            {toast.type === 'success' ? (
+              <div className="scale-60 -mx-3 -my-3 shrink-0">
+                <Postmark 
+                  textLine1="SAVED" 
+                  textLine2="POSTAL" 
+                  textLine3="OK" 
+                  size="sm" 
+                  variant="seal" 
+                  rotateDeg={-5} 
+                />
+              </div>
+            ) : (
+              toast.type === 'success' && <Check className="h-4 w-4 text-emerald-500" />
+            )}
+            <span className="text-xs font-semibold font-sans">{toast.message}</span>
             <button 
               onClick={() => setToast(null)}
-              className="text-[10px] uppercase font-black tracking-wider opacity-60 hover:opacity-100 ml-1.5 cursor-pointer"
+              className="text-[10px] uppercase font-black tracking-wider opacity-60 hover:opacity-100 ml-2.5 cursor-pointer"
             >
               Dismiss
             </button>

@@ -2,11 +2,12 @@ import { EmailTemplate, EmailBlock, BlockStyle } from '../types';
 
 const replaceVariables = (text: string, variables?: Record<string, string>): string => {
   if (!text) return '';
-  return text.replace(/{{\s*([^{}\s]+)\s*}}/g, (match, varName) => {
-    if (variables && variables[varName] !== undefined) {
+  // Support {{ first_name }} as well as {{ first_name | default: "there" }}
+  return text.replace(/{{\s*([a-zA-Z0-9_.-]+)(?:\s*\|\s*default:\s*"([^"]*)")?\s*}}/g, (match, varName, fallback) => {
+    if (variables && variables[varName] !== undefined && variables[varName] !== '') {
       return variables[varName];
     }
-    return match;
+    return fallback !== undefined ? fallback : '';
   });
 };
 
@@ -264,32 +265,53 @@ export function generateHTML(template: EmailTemplate): string {
 
       case 'imageGrid': {
         const gridImgs = block.properties?.images || [];
-        const count = gridImgs.length || 1;
-        const colWidth = 100 / count;
+        const cols = block.properties?.gridCols || 3;
+        const colWidth = 100 / cols;
+        const gap = block.properties?.gridGap !== undefined ? block.properties.gridGap : 8;
+        const cellPadding = gap / 2;
 
         blockHtml += `
                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                      <tr>
         `;
 
-        gridImgs.forEach((img) => {
+        // Chunk images into rows based on the cols property
+        for (let r = 0; r < gridImgs.length; r += cols) {
+          const rowImgs = gridImgs.slice(r, r + cols);
           blockHtml += `
-                        <td valign="top" width="${colWidth}%" style="padding: 4px;">
+                      <tr>
+          `;
+          rowImgs.forEach((img) => {
+            blockHtml += `
+                        <td valign="top" width="${colWidth}%" style="padding: ${cellPadding}px;">
                           <img src="${img.src}" alt="${img.alt || 'grid-image'}" style="width: 100%; height: auto; display: block; border-radius: ${block.style.borderRadius || 4}px;" />
                         </td>
+            `;
+          });
+          // Pad the last row with empty columns if it is not full
+          if (rowImgs.length < cols) {
+            const padCount = cols - rowImgs.length;
+            for (let p = 0; p < padCount; p++) {
+              blockHtml += `
+                        <td width="${colWidth}%" style="padding: ${cellPadding}px;"></td>
+              `;
+            }
+          }
+          blockHtml += `
+                      </tr>
           `;
-        });
+        }
 
         if (gridImgs.length === 0) {
           blockHtml += `
+                      <tr>
                         <td align="center" style="padding: 20px; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px;">
                           No images selected for this grid.
                         </td>
+                      </tr>
           `;
         }
 
         blockHtml += `
-                      </tr>
                     </table>
         `;
         break;

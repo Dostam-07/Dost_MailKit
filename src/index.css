@@ -1,18 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #0B0B10;
-  --color-primary-light: #121218;
-  --color-accent: #6D28D9;
-  --color-accent-hover: #5B21B6;
-  --color-accent-light: #8B5CF6;
-  --color-accent-glow: rgba(109, 40, 217, 0.5);
+  --color-ink: #16233B;
+  --color-ink-2: #1D2E4A;
+  --color-paper: #F1E9D8;
+  --color-paper-2: #E8DEC8;
+  --color-gold: #D9A441;
+  --color-seal: #B8452F;
+  --color-text-on-ink: #F3ECDD;
+  --color-text-on-ink-muted: #B9C0CC;
+  --color-text-on-paper: #16233B;
+
+  /* Map old color properties to help avoid breaking existing styles if any */
+  --color-primary: #16233B;
+  --color-primary-light: #1D2E4A;
+  --color-accent: #D9A441;
+  --color-accent-hover: #c59336;
+  --color-accent-light: #E8DEC8;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --spacing-0: 0px;

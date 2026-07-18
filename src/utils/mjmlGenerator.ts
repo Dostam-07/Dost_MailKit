@@ -244,16 +244,33 @@ export function generateMJML(template: EmailTemplate): string {
 
       case 'imageGrid': {
         const gridImgs = block.properties?.images || [];
-        mjmlBlock += `
-      <mj-section background-color="${blockBg}" ${gradientStr} padding="10px">`;
-        gridImgs.forEach((img) => {
+        const cols = block.properties?.gridCols || 3;
+        const colPercentWidth = Math.floor(100 / cols);
+        const gap = block.properties?.gridGap !== undefined ? block.properties.gridGap : 8;
+        const cellPadding = gap / 2;
+
+        // Group into sections (rows)
+        for (let r = 0; r < gridImgs.length; r += cols) {
+          const rowImgs = gridImgs.slice(r, r + cols);
           mjmlBlock += `
-        <mj-column>
-          <mj-image src="${img.src}" alt="${img.alt || 'grid-image'}" padding="4px" />
+      <mj-section background-color="${blockBg}" ${gradientStr} padding="4px 10px">`;
+          rowImgs.forEach((img) => {
+            mjmlBlock += `
+        <mj-column width="${colPercentWidth}%">
+          <mj-image src="${img.src}" alt="${img.alt || 'grid-image'}" padding="${cellPadding}px" border-radius="${block.style.borderRadius || 4}px" />
         </mj-column>`;
-        });
-        mjmlBlock += `
+          });
+          // Pad the last row with empty columns if needed
+          if (rowImgs.length < cols) {
+            const padCount = cols - rowImgs.length;
+            for (let p = 0; p < padCount; p++) {
+              mjmlBlock += `
+        <mj-column width="${colPercentWidth}%"></mj-column>`;
+            }
+          }
+          mjmlBlock += `
       </mj-section>`;
+        }
         break;
       }
 

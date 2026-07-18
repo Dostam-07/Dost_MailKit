@@ -14,17 +14,25 @@ import {
   Edit2,
   Check,
   Lock,
-  Unlock
+  Unlock,
+  RefreshCw,
+  Eye,
+  Link,
+  Bookmark,
+  Upload,
+  Move
 } from 'lucide-react';
-import { EmailTemplate, EmailBlock, BlockType } from '../types';
+import { EmailTemplate, EmailBlock, BlockType, SharedBlock, BlockStyle } from '../types';
+import { THEME_PRESETS } from '../utils/themes';
 
 const replaceVariables = (text: string, variables?: Record<string, string>): string => {
   if (!text) return '';
-  return text.replace(/{{\s*([^{}\s]+)\s*}}/g, (match, varName) => {
-    if (variables && variables[varName] !== undefined) {
+  // Support {{ first_name }} as well as {{ first_name | default: "there" }}
+  return text.replace(/{{\s*([a-zA-Z0-9_.-]+)(?:\s*\|\s*default:\s*"([^"]*)")?\s*}}/g, (match, varName, fallback) => {
+    if (variables && variables[varName] !== undefined && variables[varName] !== '') {
       return variables[varName];
     }
-    return match;
+    return fallback !== undefined ? fallback : '';
   });
 };
 
@@ -37,6 +45,10 @@ interface CanvasProps {
   onDeleteBlock: (id: string) => void;
   onCloneBlock: (id: string) => void;
   showGrid?: boolean;
+  // PRD v2 Additions
+  sharedBlocks?: SharedBlock[];
+  onSaveAsShared?: (block: EmailBlock, name: string, isGlobal: boolean) => void;
+  onDisconnectShared?: (blockId: string) => void;
 }
 
 export default function Canvas({
@@ -47,7 +59,10 @@ export default function Canvas({
   onUpdateBlock,
   onDeleteBlock,
   onCloneBlock,
-  showGrid = false
+  showGrid = false,
+  sharedBlocks = [],
+  onSaveAsShared,
+  onDisconnectShared
 }: CanvasProps) {
   const [viewportMode, setViewportMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -61,7 +76,41 @@ export default function Canvas({
   const [resizingBlockId, setResizingBlockId] = useState<string | null>(null);
   const [resizeStartCoords, setResizeStartCoords] = useState<{ x: number; y: number; blockWidth: number; blockHeight: number } | null>(null);
 
-  const { globalSettings, blocks } = template;
+  const { globalSettings, blocks: originalBlocks } = template;
+
+  const activeTheme = THEME_PRESETS.find(t => t.id === template.themeId) || THEME_PRESETS[0];
+
+  const blocks = originalBlocks.map(block => {
+    let resolvedBlock = { ...block };
+    if (block.symbolId) {
+      const shared = sharedBlocks.find(sb => sb.id === block.symbolId);
+      if (shared) {
+        resolvedBlock = {
+          ...block,
+          content: shared.block.content,
+          properties: { ...shared.block.properties, ...block.properties },
+          style: { ...shared.block.style, ...block.style }
+        };
+      }
+    }
+    
+    // Fallback un-overridden styles to the active theme!
+    const mergedStyle: BlockStyle = {
+      ...resolvedBlock.style,
+      color: resolvedBlock.style.color || activeTheme.colors.text,
+      fontFamily: resolvedBlock.style.fontFamily || activeTheme.typography.bodyFont,
+    };
+    
+    // If it's a button and has no custom background, default to activeTheme's primary!
+    if (resolvedBlock.type === 'button' && !resolvedBlock.style.backgroundColor) {
+      mergedStyle.backgroundColor = activeTheme.colors.primary;
+    }
+    
+    return {
+      ...resolvedBlock,
+      style: mergedStyle
+    };
+  });
 
   // Drag-to-move effect
   React.useEffect(() => {
@@ -216,9 +265,9 @@ export default function Canvas({
   // Move block utility
   const handleMoveBlock = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= blocks.length) return;
+    if (targetIndex < 0 || targetIndex >= originalBlocks.length) return;
 
-    const newBlocks = [...blocks];
+    const newBlocks = [...originalBlocks];
     const temp = newBlocks[index];
     newBlocks[index] = newBlocks[targetIndex];
     newBlocks[targetIndex] = temp;
@@ -250,10 +299,10 @@ export default function Canvas({
 
     // Case 1: Reordering an existing block inside the canvas
     if (incomingBlockId) {
-      const sourceIndex = blocks.findIndex((b) => b.id === incomingBlockId);
+      const sourceIndex = originalBlocks.findIndex((b) => b.id === incomingBlockId);
       if (sourceIndex === -1 || sourceIndex === index) return;
 
-      const updatedBlocks = [...blocks];
+      const updatedBlocks = [...originalBlocks];
       const [movedBlock] = updatedBlocks.splice(sourceIndex, 1);
       
       // Determine final landing index based on relative direction
@@ -267,7 +316,7 @@ export default function Canvas({
     // Case 2: Dropping a brand new block from sidebar
     if (incomingBlockType) {
       const newBlock = createDefaultBlock(incomingBlockType);
-      const updatedBlocks = [...blocks];
+      const updatedBlocks = [...originalBlocks];
       updatedBlocks.splice(index, 0, newBlock);
       onUpdateBlocks(updatedBlocks);
       onSelectBlock(newBlock.id);
@@ -283,10 +332,10 @@ export default function Canvas({
 
     if (incomingBlockId) {
       // Reorder to the end
-      const sourceIndex = blocks.findIndex((b) => b.id === incomingBlockId);
-      if (sourceIndex === -1 || sourceIndex === blocks.length - 1) return;
+      const sourceIndex = originalBlocks.findIndex((b) => b.id === incomingBlockId);
+      if (sourceIndex === -1 || sourceIndex === originalBlocks.length - 1) return;
       
-      const updatedBlocks = [...blocks];
+      const updatedBlocks = [...originalBlocks];
       const [movedBlock] = updatedBlocks.splice(sourceIndex, 1);
       updatedBlocks.push(movedBlock);
       onUpdateBlocks(updatedBlocks);
@@ -296,7 +345,7 @@ export default function Canvas({
 
     if (incomingBlockType) {
       const newBlock = createDefaultBlock(incomingBlockType);
-      onUpdateBlocks([...blocks, newBlock]);
+      onUpdateBlocks([...originalBlocks, newBlock]);
       onSelectBlock(newBlock.id);
     }
   };
@@ -622,19 +671,19 @@ export default function Canvas({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#EBEDF0] dark:bg-slate-950 h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs select-none">
+    <div className="flex-1 flex flex-col bg-ink text-text-on-ink h-full overflow-hidden rounded-xl border border-ink-2/50 shadow-xl select-none">
       {/* Canvas Header / Controls */}
-      <div className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center px-6 shrink-0 z-10">
+      <div className="h-14 border-b border-ink-2/40 bg-ink flex justify-between items-center px-6 shrink-0 z-10">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Viewport:</span>
-          <div className="flex bg-slate-100 dark:bg-slate-950 rounded-lg p-0.5 border border-slate-200/50 dark:border-slate-800">
+          <span className="text-xs font-mono font-bold text-text-on-ink-muted uppercase tracking-wider">Viewport:</span>
+          <div className="flex bg-ink-2 rounded-lg p-0.5 border border-ink-2/50">
             <button
               id="btn-viewport-desktop"
               onClick={() => setViewportMode('desktop')}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 viewportMode === 'desktop'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
               title="Desktop View (e.g. 600px)"
             >
@@ -643,10 +692,10 @@ export default function Canvas({
             <button
               id="btn-viewport-tablet"
               onClick={() => setViewportMode('tablet')}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 viewportMode === 'tablet'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
               title="Tablet View (480px)"
             >
@@ -655,10 +704,10 @@ export default function Canvas({
             <button
               id="btn-viewport-mobile"
               onClick={() => setViewportMode('mobile')}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 viewportMode === 'mobile'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-ink text-gold border border-gold/20 shadow-sm'
+                  : 'text-text-on-ink-muted hover:text-text-on-ink'
               }`}
               title="Mobile View (375px)"
             >
@@ -668,21 +717,21 @@ export default function Canvas({
         </div>
 
         {/* Info label */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 px-3 py-1 rounded-full border border-slate-200/30 dark:border-slate-850">
-          <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+        <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-text-on-ink-muted bg-ink-2/50 px-3 py-1 rounded-full border border-ink-2/40">
+          <Sparkles className="h-3.5 w-3.5 text-gold" />
           <span>Click on elements to edit styles and contents.</span>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/30 dark:border-slate-800">
+          <div className="text-xs font-bold text-text-on-ink-muted bg-ink-2 px-2.5 py-1 rounded-lg border border-ink-2/50 font-mono uppercase tracking-wider">
             {blocks.length} sections
           </div>
 
           {blocks.length > 0 && (
             <div className="relative">
               {showClearConfirm ? (
-                <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 p-1 rounded-lg">
-                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400 px-1.5">Clear template?</span>
+                <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-900/40 p-1 rounded-lg">
+                  <span className="text-[10px] font-bold text-red-400 px-1.5">Clear template?</span>
                   <button
                     id="btn-clear-canvas-yes"
                     onClick={() => {
@@ -697,7 +746,7 @@ export default function Canvas({
                   <button
                     id="btn-clear-canvas-no"
                     onClick={() => setShowClearConfirm(false)}
-                    className="px-2 py-0.5 text-[10px] font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded cursor-pointer transition-colors"
+                    className="px-2 py-0.5 text-[10px] font-bold bg-ink-2 hover:bg-ink-2/80 text-text-on-ink rounded cursor-pointer transition-colors"
                   >
                     No
                   </button>
@@ -706,7 +755,7 @@ export default function Canvas({
                 <button
                   id="btn-clear-canvas"
                   onClick={() => setShowClearConfirm(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg border border-red-250/40 dark:border-red-900/40 transition-all cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg border border-red-900/40 transition-all cursor-pointer font-mono uppercase tracking-wider"
                   title="Clear all blocks from the canvas to start from a blank template"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -783,16 +832,16 @@ export default function Canvas({
                   }}
                   className={`group transition-all duration-150 ${
                     isFigmaAbsolute
-                      ? `absolute rounded-lg border-2 shadow-xs ${!block.locked ? 'cursor-move' : ''} ${
+                      ? `absolute rounded-lg border ${!block.locked ? 'cursor-move' : ''} ${
                           isSelected 
-                            ? 'border-blue-500 bg-blue-50/5 ring-2 ring-blue-500/20' 
-                            : 'border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 bg-slate-50/5'
+                            ? 'border-gold bg-gold/5 ring-1 ring-gold/25' 
+                            : 'border-dashed border-ink-2 hover:border-gold/50 bg-paper/5'
                         }`
                       : `relative border-y ${
                           isSelected 
-                            ? 'border-blue-500 bg-blue-50/10' 
-                            : 'border-transparent hover:border-blue-300/60 hover:bg-slate-50/10'
-                        } ${dragOverIndex === index ? 'border-t-4 border-t-blue-500' : ''}`
+                            ? 'border-gold/50 outline outline-1 outline-gold bg-gold/[0.03]' 
+                            : 'border-transparent hover:outline hover:outline-1 hover:outline-gold/30 hover:bg-gold/[0.01]'
+                        } ${dragOverIndex === index ? 'border-t-2 border-t-gold' : ''}`
                   } ${isBeingDragged ? 'opacity-40 scale-[0.98]' : ''}`}
                   style={{
                     background: block.style.background 
@@ -803,7 +852,6 @@ export default function Canvas({
                     paddingLeft: `clamp(8px, 4%, ${block.style.paddingLeft !== undefined ? block.style.paddingLeft : 20}px)`,
                     paddingRight: `clamp(8px, 4%, ${block.style.paddingRight !== undefined ? block.style.paddingRight : 20}px)`,
                     borderRadius: block.style.borderRadius !== undefined ? `${block.style.borderRadius}px` : undefined,
-                    overflow: block.style.borderRadius !== undefined ? 'hidden' : undefined,
                     
                     // Absolute coordinates and sizes when Figma Absolute mode is enabled
                     position: isFigmaAbsolute ? 'absolute' : undefined,
@@ -822,10 +870,22 @@ export default function Canvas({
                   )}
 
                   {/* Highlight bounding box name */}
-                  <div className={`absolute top-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20 ${isFigmaAbsolute ? 'left-2' : 'left-8'}`}>
+                  <div className={`absolute top-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20 flex gap-1.5 items-center ${isFigmaAbsolute ? 'left-2' : 'left-8'}`}>
                     <span className={`text-[9px] font-bold tracking-wider font-mono px-1.5 py-0.5 rounded shadow-xs uppercase ${block.locked ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white'}`}>
                       {block.type} {block.locked ? '(LOCKED)' : ''}
                     </span>
+                    {block.symbolId && (
+                      <span className="text-[9px] font-bold tracking-wider font-mono px-1.5 py-0.5 rounded shadow-xs uppercase bg-emerald-600 text-white flex items-center gap-1">
+                        <RefreshCw className="h-2.5 w-2.5 animate-spin" style={{ animationDuration: '8s' }} />
+                        <span>Synced Block</span>
+                      </span>
+                    )}
+                    {block.visibilityCondition && (
+                      <span className="text-[9px] font-bold tracking-wider font-mono px-1.5 py-0.5 rounded shadow-xs uppercase bg-purple-600 text-white flex items-center gap-1">
+                        <Eye className="h-2.5 w-2.5" />
+                        <span>IF {block.visibilityCondition.field} {block.visibilityCondition.operator === 'exists' ? 'exists' : block.visibilityCondition.operator === 'equals' ? '==' : '!='} {block.visibilityCondition.value || ''}</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Figma-style Coordinate badge on dragging/resizing */}
@@ -848,14 +908,19 @@ export default function Canvas({
 
                   {/* Inline quick edit controls */}
                   {isSelected && (
-                    <div className="absolute -top-4 right-3 flex items-center bg-blue-600 rounded-md shadow-lg z-30 overflow-hidden border border-blue-500 select-none">
+                    <div 
+                      className="absolute right-3 flex items-center bg-ink text-text-on-ink-muted rounded-lg shadow-lg z-30 overflow-hidden border border-ink-2/80 select-none"
+                      style={{
+                        top: index === 0 ? '8px' : '-16px'
+                      }}
+                    >
                       {!isFigmaAbsolute && !block.locked && (
                         <>
                           <button
                             id={`btn-move-up-${block.id}`}
                             onClick={(e) => { e.stopPropagation(); handleMoveBlock(index, 'up'); }}
                             disabled={index === 0}
-                            className="p-1 text-white hover:bg-blue-700 disabled:opacity-40 transition-colors"
+                            className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 disabled:opacity-35 transition-colors cursor-pointer"
                             title="Move Up"
                           >
                             <ArrowUp className="h-3.5 w-3.5" />
@@ -864,12 +929,12 @@ export default function Canvas({
                             id={`btn-move-down-${block.id}`}
                             onClick={(e) => { e.stopPropagation(); handleMoveBlock(index, 'down'); }}
                             disabled={index === blocks.length - 1}
-                            className="p-1 text-white hover:bg-blue-700 disabled:opacity-40 transition-colors"
+                            className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 disabled:opacity-35 transition-colors cursor-pointer"
                             title="Move Down"
                           >
                             <ArrowDown className="h-3.5 w-3.5" />
                           </button>
-                          <div className="w-px h-3 bg-blue-500" />
+                          <div className="w-px h-3 bg-ink-2/60" />
                         </>
                       )}
                       
@@ -877,7 +942,7 @@ export default function Canvas({
                         <button
                           id={`btn-inline-edit-${block.id}`}
                           onClick={(e) => startEditing(e, block)}
-                          className="p-1 text-white hover:bg-blue-700 transition-colors flex items-center gap-1 px-1.5"
+                          className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 transition-colors flex items-center gap-1 px-1.5 cursor-pointer"
                           title="Edit Text Inline"
                         >
                           <Edit2 className="h-3 w-3" />
@@ -888,26 +953,67 @@ export default function Canvas({
                       <button
                         id={`btn-clone-${block.id}`}
                         onClick={(e) => { e.stopPropagation(); onCloneBlock(block.id); }}
-                        className="p-1 text-white hover:bg-blue-700 transition-colors"
+                        className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 transition-colors cursor-pointer"
                         title="Clone Block"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
 
+                      {/* Synced Block Unlink or Save Block as Pattern / Global Synced Block */}
+                      {block.symbolId && onDisconnectShared ? (
+                        <button
+                          id={`btn-unlink-shared-${block.id}`}
+                          onClick={(e) => { e.stopPropagation(); onDisconnectShared(block.id); }}
+                          className="p-1 text-gold hover:bg-ink-2 transition-colors cursor-pointer"
+                          title="Disconnect from Global Pattern (Convert to Local Block)"
+                        >
+                          <Link className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        !block.symbolId && onSaveAsShared && (
+                          <>
+                            <button
+                              id={`btn-save-pattern-${block.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const name = prompt("Enter a name for this layout pattern:", `My Saved ${block.type} Pattern`);
+                                if (name) onSaveAsShared(block, name, false);
+                              }}
+                              className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 transition-colors cursor-pointer"
+                              title="Save as Custom Reusable Pattern (Unsynced template foundation)"
+                            >
+                              <Bookmark className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              id={`btn-save-synced-${block.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const name = prompt("Enter a name for this synced global block:", `Global Brand ${block.type}`);
+                                if (name) onSaveAsShared(block, name, true);
+                              }}
+                              className="p-1 text-gold/80 hover:text-gold hover:bg-ink-2 transition-colors cursor-pointer"
+                              title="Save as Synced Global Block (Editing updates everywhere instantly)"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )
+                      )}
+
                       <button
                         id={`btn-toggle-lock-${block.id}`}
                         onClick={(e) => { e.stopPropagation(); onUpdateBlock(block.id, { locked: !block.locked }); }}
-                        className="p-1 text-white hover:bg-blue-700 transition-colors"
+                        className="p-1 text-text-on-ink-muted hover:text-gold hover:bg-ink-2 transition-colors cursor-pointer"
                         title={block.locked ? "Unlock Block" : "Lock Block"}
                       >
-                        {block.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                        {block.locked ? <Lock className="h-3.5 w-3.5 text-gold" /> : <Unlock className="h-3.5 w-3.5" />}
                       </button>
 
                       {!block.locked && (
                         <button
                           id={`btn-delete-${block.id}`}
                           onClick={(e) => { e.stopPropagation(); onDeleteBlock(block.id); }}
-                          className="p-1 text-white hover:bg-red-600 transition-colors"
+                          className="p-1 text-text-on-ink-muted hover:bg-red-900/30 hover:text-red-400 transition-colors cursor-pointer"
                           title="Delete Block"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -917,7 +1023,13 @@ export default function Canvas({
                   )}
 
                   {/* Inner Content Rendering of Block */}
-                  <div className="w-full relative">
+                  <div 
+                    className="w-full relative"
+                    style={{
+                      borderRadius: block.style.borderRadius !== undefined ? `${block.style.borderRadius}px` : undefined,
+                      overflow: block.style.borderRadius !== undefined ? 'hidden' : undefined,
+                    }}
+                  >
                     {editingBlockId === block.id ? (
                       <div className="p-2 bg-slate-50 rounded-xl border border-blue-400 flex flex-col gap-2 z-10 relative" onClick={(e) => e.stopPropagation()}>
                         <label className="text-[10px] font-bold text-slate-400">INLINE COMPONENT EDITOR</label>
@@ -1169,12 +1281,112 @@ export default function Canvas({
                         )}
 
                         {block.type === 'imageGrid' && (
-                          <div className="grid grid-cols-3 gap-2 w-full">
-                            {(block.properties?.images || []).map((img, i) => (
-                              <div key={i} className="aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200/80 dark:border-slate-800">
-                                <img src={img.src} alt={img.alt || ''} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                              </div>
-                            ))}
+                          <div 
+                            className="grid w-full"
+                            style={{ 
+                              gridTemplateColumns: `repeat(${block.properties?.gridCols || 3}, minmax(0, 1fr))`,
+                              gap: `${block.properties?.gridGap !== undefined ? block.properties.gridGap : 8}px`
+                            }}
+                          >
+                            {(block.properties?.images || []).map((img, i) => {
+                              const isBlockSelected = selectedBlockId === block.id;
+                              return (
+                                <div 
+                                  key={i} 
+                                  draggable={isBlockSelected && !block.locked}
+                                  onDragStart={(e) => {
+                                    if (!isBlockSelected) return;
+                                    e.stopPropagation();
+                                    e.dataTransfer.setData('gridImageIndex', i.toString());
+                                    e.dataTransfer.setData('gridBlockId', block.id);
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (!isBlockSelected) return;
+                                    e.preventDefault();
+                                  }}
+                                  onDrop={(e) => {
+                                    if (!isBlockSelected) return;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const sourceBlockId = e.dataTransfer.getData('gridBlockId');
+                                    if (sourceBlockId !== block.id) return;
+                                    const sourceIdxStr = e.dataTransfer.getData('gridImageIndex');
+                                    if (!sourceIdxStr) return;
+                                    const sourceIdx = parseInt(sourceIdxStr, 10);
+                                    if (isNaN(sourceIdx) || sourceIdx === i) return;
+
+                                    const list = [...(block.properties?.images || [])];
+                                    const temp = list[sourceIdx];
+                                    list[sourceIdx] = list[i];
+                                    list[i] = temp;
+
+                                    onUpdateBlock(block.id, {
+                                      properties: {
+                                        ...block.properties,
+                                        images: list
+                                      }
+                                    });
+                                  }}
+                                  className={`aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200/80 dark:border-slate-800 relative group/griditem transition-all ${
+                                    isBlockSelected ? 'cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-gold/40' : ''
+                                  }`}
+                                >
+                                  <img 
+                                    src={img.src} 
+                                    alt={img.alt || ''} 
+                                    className="w-full h-full object-cover pointer-events-none" 
+                                    crossOrigin="anonymous" 
+                                  />
+                                  
+                                  {/* Interactive Controls Overlay inside selected block */}
+                                  {isBlockSelected && (
+                                    <div className="absolute inset-0 bg-ink/75 flex flex-col items-center justify-center gap-2 opacity-0 group-hover/griditem:opacity-100 transition-opacity p-2 text-center">
+                                      <div className="flex items-center gap-1 text-[9px] font-mono font-bold text-gold">
+                                        <Move className="h-3.5 w-3.5" />
+                                        <span>DRAG TO REORDER</span>
+                                      </div>
+                                      
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          document.getElementById(`canvas-upload-${block.id}-${i}`)?.click();
+                                        }}
+                                        className="px-2 py-1 bg-gold text-ink text-[10px] font-mono font-bold rounded hover:bg-gold/90 transition-all shadow-md flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <Upload className="h-3 w-3" />
+                                        REPLACE
+                                      </button>
+                                      
+                                      <input 
+                                        type="file"
+                                        id={`canvas-upload-${block.id}-${i}`}
+                                        accept="image/*"
+                                        className="hidden"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          const reader = new FileReader();
+                                          reader.onload = (event) => {
+                                            const base64 = event.target?.result as string;
+                                            const list = [...(block.properties?.images || [])];
+                                            list[i] = { ...list[i], src: base64 };
+                                            onUpdateBlock(block.id, {
+                                              properties: {
+                                                ...block.properties,
+                                                images: list
+                                              }
+                                            });
+                                          };
+                                          reader.readAsDataURL(file);
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -1203,6 +1415,41 @@ export default function Canvas({
                             <button className="bg-blue-600 text-white font-bold text-xs px-4 py-2 rounded-lg w-full transition-transform active:scale-[0.98]">
                               Buy Now
                             </button>
+                          </div>
+                        )}
+
+                        {block.type === 'productLoop' && (
+                          <div className="border-2 border-dashed border-purple-200 dark:border-purple-900/60 rounded-2xl p-4 bg-purple-50/10 dark:bg-purple-950/5 relative">
+                            {/* Loop header */}
+                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-purple-100 dark:border-purple-900/40 select-none">
+                              <span className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Dynamic Product Loop Feed: {block.properties?.dataSource || 'recommended_products'} (Max {block.properties?.limit || 3})
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-mono">Loop Item Template</span>
+                            </div>
+                            
+                            {/* Loop items grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {(block.properties?.items || []).slice(0, block.properties?.limit || 3).map((item: any, idx: number) => (
+                                <div key={idx} className="flex flex-col items-center p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-2xs relative group/item">
+                                  <img 
+                                    src={item.src || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200'} 
+                                    className="w-full h-24 object-cover rounded-lg mb-2" 
+                                    alt={item.name} 
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <h4 className="font-bold text-xs text-center line-clamp-1 text-slate-800 dark:text-slate-200">
+                                    {item.name}
+                                  </h4>
+                                  <span className="text-purple-600 font-extrabold text-xs mt-1">
+                                    {item.price}
+                                  </span>
+                                  <div className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 transition-opacity bg-purple-600 text-white text-[8px] font-bold px-1 py-0.2 rounded font-mono shadow-xs">
+                                    Item #{idx + 1}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 

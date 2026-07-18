@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, LayoutGrid, ArrowRight, Clock } from 'lucide-react';
+import { X, LayoutGrid, ArrowRight } from 'lucide-react';
 import { EmailTemplate } from '../types';
 import { STARTER_TEMPLATES } from '../utils/templates';
+import Postmark from './Postmark';
 
 interface TemplateLibraryModalProps {
   onSelectTemplate: (template: EmailTemplate) => void;
@@ -10,28 +11,31 @@ interface TemplateLibraryModalProps {
 
 export default function TemplateLibraryModal({ onSelectTemplate, onClose }: TemplateLibraryModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col my-8 animate-fade-in relative">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-ink border border-ink-2/80 w-full max-w-5xl rounded-xl shadow-2xl flex flex-col my-8 animate-fade-in relative text-text-on-ink">
+        
+        {/* Header with Postal typography */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-ink-2/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gold/10 text-gold rounded-lg">
               <LayoutGrid className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Template Library</h2>
+            <h2 className="text-xl font-serif font-semibold text-text-on-ink">Template Library</h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+            className="p-2 hover:bg-ink-2 text-text-on-ink-muted hover:text-text-on-ink rounded-full transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-            Browse our collection of pre-built, community-inspired email templates. Select a template to import it directly into the editor.
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          <p className="text-sm text-text-on-ink-muted">
+            Browse our collection of pre-built, community-inspired email templates. Select a template to import it directly into your Postal Canvas.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {STARTER_TEMPLATES.map((tpl) => (
               <div
                 key={tpl.id}
@@ -39,35 +43,67 @@ export default function TemplateLibraryModal({ onSelectTemplate, onClose }: Temp
                   onSelectTemplate(tpl);
                   onClose();
                 }}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 rounded-xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer transition-all flex flex-col group"
+                className="bg-paper text-ink border border-paper-2 hover:bg-paper-2 rounded-lg overflow-hidden flex flex-col group cursor-pointer transition-all duration-300 shadow-[2px_2px_0px_rgba(22,35,59,0.1)] hover:shadow-sm"
               >
-                <div className="h-32 border-b border-slate-100 dark:border-slate-700 relative overflow-hidden group">
+                {/* Image / Thumbnail Section */}
+                <div className="h-40 bg-paper-2 border-b border-ink/5 relative overflow-hidden group">
                   {tpl.thumbnail ? (
                     <img 
                       src={tpl.thumbnail} 
                       alt={tpl.name} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 dark:bg-slate-900" style={{ backgroundColor: tpl.globalSettings.backgroundColor }}>
-                       <LayoutGrid className="w-8 h-8 text-slate-300 dark:text-slate-700" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-paper-2">
+                       <LayoutGrid className="w-8 h-8 text-ink/20" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  <span className="absolute bottom-2 left-2 text-[10px] font-bold px-2 py-1 bg-white/80 dark:bg-black/50 backdrop-blur rounded shadow-sm z-10 w-max uppercase tracking-wider text-slate-800 dark:text-slate-200">
+
+                  {/* Badging overlay */}
+                  <span className="absolute bottom-2 left-2 text-[9px] font-mono font-bold px-2 py-1 bg-ink text-paper rounded shadow-sm z-10 uppercase tracking-widest">
                     {tpl.blocks.length} Blocks
                   </span>
+
+                  {/* Featured / AI Generated Postmark Badges */}
+                  {tpl.isFeatured && (
+                    <div className="absolute top-2 right-2 scale-60 origin-top-right z-10">
+                      <Postmark 
+                        textLine1="OFFICIAL" 
+                        textLine2="FEATURED" 
+                        textLine3="MAIL" 
+                        size="md" 
+                        variant="seal" 
+                        rotateDeg={4} 
+                      />
+                    </div>
+                  )}
+                  {tpl.isAiGenerated && (
+                    <div className="absolute top-2 right-2 scale-60 origin-top-right z-10">
+                      <Postmark 
+                        textLine1="AI" 
+                        textLine2="GENERATED" 
+                        textLine3="DRAFT" 
+                        size="md" 
+                        variant="ink" 
+                        rotateDeg={-5} 
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="p-4 flex-1 flex flex-col gap-2">
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+
+                {/* Info Text Section */}
+                <div className="p-5 flex-1 flex flex-col gap-2">
+                  <h4 className="font-serif font-bold text-ink text-base group-hover:text-seal transition-colors leading-snug">
                     {tpl.name}
                   </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  <p className="text-xs text-ink/75 leading-relaxed line-clamp-2">
                     {tpl.subtitle || tpl.subject}
                   </p>
-                  <button className="mt-auto pt-3 w-full flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform border-t border-slate-100 dark:border-slate-700">
-                    Import Template <ArrowRight className="w-3.5 h-3.5" />
+                  
+                  {/* Distinct secondary CTA look */}
+                  <button className="mt-auto pt-3 w-full flex items-center justify-between text-xs font-bold text-ink hover:text-seal border-t border-ink/5 transition-colors cursor-pointer font-mono uppercase tracking-wider">
+                    Import Template <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </div>

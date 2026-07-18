@@ -11,14 +11,28 @@ import {
   Settings as SettingsIcon, 
   Layers, 
   Layout, 
-  RotateCcw, 
   Plus,
   HelpCircle,
   Sliders,
-  Trash2
+  Trash2,
+  Boxes,
+  Search,
+  CheckSquare,
+  Users,
+  Paintbrush,
+  Check,
+  RefreshCw,
+  FolderHeart,
+  AlertCircle,
+  Eye,
+  Link,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
-import { BlockType, EmailTemplate, EmailBlock, GlobalSettings } from '../types';
+import { BlockType, EmailTemplate, EmailBlock, GlobalSettings, SharedBlock, MediaAsset } from '../types';
 import { STARTER_TEMPLATES } from '../utils/templates';
+import { blockRegistry, BlockDefinition } from '../blocks/registry';
+import { THEME_PRESETS } from '../utils/themes';
 
 interface SidebarProps {
   template: EmailTemplate;
@@ -28,54 +42,20 @@ interface SidebarProps {
   onDragStartNewBlock?: (type: BlockType | null) => void;
   selectedBlockId: string | null;
   onUpdateBlock?: (blockId: string, updates: Partial<EmailBlock>) => void;
+  
+  // PRD v2 Additions
+  sharedBlocks?: SharedBlock[];
+  onAddSharedBlock?: (name: string, category: SharedBlock['category'], isGlobal: boolean, block: EmailBlock) => void;
+  onDeleteSharedBlock?: (id: string) => void;
+  onAddBlockFromShared?: (sharedBlockId: string) => void;
+  
+  mediaAssets?: MediaAsset[];
+  onAddMediaAsset?: (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => void;
+  onDeleteMediaAsset?: (id: string) => void;
+  
+  currentRole?: 'owner' | 'editor' | 'contributor';
+  onChangeRole?: (role: 'owner' | 'editor' | 'contributor') => void;
 }
-
-const DEFAULT_STYLE_PRESETS = [
-  {
-    id: 'preset-elegant-coral',
-    name: 'Elegant Coral Headline',
-    type: 'header',
-    style: {
-      color: '#f43f5e',
-      fontSize: '28px',
-      fontWeight: 'bold',
-      textAlign: 'center',
-      paddingTop: 24,
-      paddingBottom: 16
-    }
-  },
-  {
-    id: 'preset-neon-blue-btn',
-    name: 'Neon Blue Button',
-    type: 'button',
-    style: {
-      backgroundColor: '#2563eb',
-      color: '#ffffff',
-      borderRadius: 8,
-      fontSize: '16px',
-      fontWeight: 'bold',
-      paddingTop: 14,
-      paddingBottom: 14,
-      paddingLeft: 28,
-      paddingRight: 28,
-      textAlign: 'center'
-    }
-  },
-  {
-    id: 'preset-clean-gray-card',
-    name: 'Clean Gray Card',
-    type: 'text',
-    style: {
-      backgroundColor: '#f1f5f9',
-      borderRadius: 12,
-      paddingTop: 20,
-      paddingBottom: 20,
-      paddingLeft: 20,
-      paddingRight: 20,
-      color: '#334155'
-    }
-  }
-];
 
 export default function Sidebar({ 
   template, 
@@ -84,114 +64,36 @@ export default function Sidebar({
   onLoadTemplate,
   onDragStartNewBlock,
   selectedBlockId,
-  onUpdateBlock
+  onUpdateBlock,
+  
+  // PRD v2 fallbacks
+  sharedBlocks = [],
+  onDeleteSharedBlock,
+  onAddBlockFromShared,
+  
+  mediaAssets = [],
+  onAddMediaAsset,
+  onDeleteMediaAsset,
+  
+  currentRole = 'owner',
+  onChangeRole
 }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState<'blocks' | 'settings' | 'templates'>('blocks');
-  const [newStylePresetName, setNewStylePresetName] = useState('');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'patterns' | 'media' | 'styles' | 'presets' | 'workflow'>('blocks');
+  
+  // Search & filter states
+  const [patternSearch, setPatternSearch] = useState('');
+  const [patternCategory, setPatternCategory] = useState<string>('all');
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaCategory, setMediaCategory] = useState<string>('all');
 
-  const [savedStylePresets, setSavedStylePresets] = useState<{ id: string; name: string; type: string; style: any }[]>(() => {
-    try {
-      const stored = localStorage.getItem('easy-email-saved-styles');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return DEFAULT_STYLE_PRESETS;
-  });
-
-  const savePresets = (updatedPresets: any[]) => {
-    setSavedStylePresets(updatedPresets);
-    try {
-      localStorage.setItem('easy-email-saved-styles', JSON.stringify(updatedPresets));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  // Media upload state
+  const [newMediaUrl, setNewMediaUrl] = useState('');
+  const [newMediaName, setNewMediaName] = useState('');
+  const [newMediaCategory, setNewMediaCategory] = useState<MediaAsset['category']>('general');
+  const [newMediaAlt, setNewMediaAlt] = useState('');
+  const [showAddMediaForm, setShowAddMediaForm] = useState(false);
 
   const selectedBlock = template.blocks.find(b => b.id === selectedBlockId) || null;
-
-  const handleSaveCurrentStyle = () => {
-    if (!selectedBlock) return;
-    const name = newStylePresetName.trim() || `${selectedBlock.type.toUpperCase()} Style Preset`;
-    const newPreset = {
-      id: `style-preset-${Date.now()}`,
-      name,
-      type: selectedBlock.type,
-      style: { ...selectedBlock.style }
-    };
-    const nextPresets = [newPreset, ...savedStylePresets];
-    savePresets(nextPresets);
-    setNewStylePresetName('');
-  };
-
-  const handleApplyStylePreset = (style: any) => {
-    if (!selectedBlockId || !onUpdateBlock) return;
-    onUpdateBlock(selectedBlockId, {
-      style: {
-        ...selectedBlock?.style,
-        ...style
-      }
-    });
-  };
-
-  const handleDeleteStylePreset = (id: string) => {
-    const nextPresets = savedStylePresets.filter(p => p.id !== id);
-    savePresets(nextPresets);
-  };
-
-  // Available block definitions to render in sidebar
-  const blockDefinitions: { type: BlockType; label: string; icon: React.ReactNode; description: string }[] = [
-    { 
-      type: 'header', 
-      label: 'Main Heading', 
-      icon: <Heading className="h-5 w-5 text-indigo-500" />, 
-      description: 'Primary headline style text' 
-    },
-    { 
-      type: 'text', 
-      label: 'Text Body', 
-      icon: <Type className="h-5 w-5 text-emerald-500" />, 
-      description: 'Paragraphs, lists & formatting' 
-    },
-    { 
-      type: 'image', 
-      label: 'Image Banner', 
-      icon: <ImageIcon className="h-5 w-5 text-rose-500" />, 
-      description: 'Photos, designs or logo banners' 
-    },
-    { 
-      type: 'button', 
-      label: 'Call to Action', 
-      icon: <Square className="h-5 w-5 text-amber-500" />, 
-      description: 'Clickable button with link' 
-    },
-    { 
-      type: 'divider', 
-      label: 'Separator', 
-      icon: <Minus className="h-5 w-5 text-slate-400" />, 
-      description: 'Horizontal separator line' 
-    },
-    { 
-      type: 'spacer', 
-      label: 'Spacer block', 
-      icon: <Layout className="h-5 w-5 text-sky-400" />, 
-      description: 'Blank space for vertical margin' 
-    },
-    { 
-      type: 'social', 
-      label: 'Social Networks', 
-      icon: <Share2 className="h-5 w-5 text-purple-500" />, 
-      description: 'Interactive social sharing icons' 
-    },
-    { 
-      type: 'footer', 
-      label: 'Footer Note', 
-      icon: <FileText className="h-5 w-5 text-indigo-400" />, 
-      description: 'Copyrights & Unsubscribe options' 
-    },
-  ];
 
   // Drag start handler for blocks
   const handleDragStart = (e: React.DragEvent, type: BlockType) => {
@@ -229,424 +131,713 @@ export default function Sidebar({
     });
   };
 
+  // Switch current visual theme preset
+  const handleSelectTheme = (themeId: string) => {
+    const selectedTheme = THEME_PRESETS.find(t => t.id === themeId);
+    if (!selectedTheme) return;
+
+    onUpdateTemplate({
+      themeId: selectedTheme.id,
+      globalSettings: {
+        ...template.globalSettings,
+        fontFamily: selectedTheme.typography.bodyFont,
+        brandColors: {
+          primary: selectedTheme.colors.primary,
+          secondary: selectedTheme.colors.secondary,
+          accent: selectedTheme.colors.accent,
+        },
+        contentBg: selectedTheme.colors.background,
+        backgroundColor: selectedTheme.colors.background === '#ffffff' ? '#f1f5f9' : '#0f172a'
+      }
+    });
+  };
+
+  // Group registry blocks by category
+  const categorizedBlocks: Record<string, BlockDefinition[]> = React.useMemo(() => {
+    const groups: Record<string, BlockDefinition[]> = {
+      content: [],
+      layout: [],
+      commerce: [],
+      social: [],
+      advanced: []
+    };
+    
+    // Sourced dynamically from the Map
+    Array.from(blockRegistry.values()).forEach(def => {
+      if (groups[def.category]) {
+        groups[def.category].push(def);
+      } else {
+        groups.advanced.push(def);
+      }
+    });
+    return groups;
+  }, []);
+
+  // Filtered patterns list
+  const filteredPatterns = React.useMemo(() => {
+    return sharedBlocks.filter(p => {
+      const matchSearch = p.name.toLowerCase().includes(patternSearch.toLowerCase());
+      const matchCat = patternCategory === 'all' || p.category === patternCategory;
+      return matchSearch && matchCat;
+    });
+  }, [sharedBlocks, patternSearch, patternCategory]);
+
+  // Filtered media assets list
+  const filteredMedia = React.useMemo(() => {
+    return mediaAssets.filter(m => {
+      const matchSearch = m.name.toLowerCase().includes(mediaSearch.toLowerCase()) || m.altText.toLowerCase().includes(mediaSearch.toLowerCase());
+      const matchCat = mediaCategory === 'all' || m.category === mediaCategory;
+      return matchSearch && matchCat;
+    });
+  }, [mediaAssets, mediaSearch, mediaCategory]);
+
+  // Create a new media asset handler
+  const handleCreateMedia = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMediaUrl || !newMediaName) return;
+    if (onAddMediaAsset) {
+      onAddMediaAsset({
+        name: newMediaName,
+        url: newMediaUrl,
+        category: newMediaCategory,
+        altText: newMediaAlt || `Asset image of ${newMediaName}`
+      });
+      setNewMediaUrl('');
+      setNewMediaName('');
+      setNewMediaAlt('');
+      setShowAddMediaForm(false);
+    }
+  };
+
+  // Quick apply an asset to the currently selected image block
+  const handleApplyMediaToSelected = (url: string) => {
+    if (!selectedBlock || !onUpdateBlock) return;
+    if (selectedBlock.type === 'image' || selectedBlock.type === 'productCard' || selectedBlock.type === 'hero') {
+      onUpdateBlock(selectedBlock.id, {
+        properties: {
+          ...selectedBlock.properties,
+          src: url
+        }
+      });
+    } else if (selectedBlock.type === 'imageGrid') {
+      // Update first slot for quick editing demo
+      const nextImages = [...(selectedBlock.properties?.images || [])];
+      if (nextImages[0]) {
+        nextImages[0] = { ...nextImages[0], src: url };
+        onUpdateBlock(selectedBlock.id, {
+          properties: {
+            ...selectedBlock.properties,
+            images: nextImages
+          }
+        });
+      }
+    }
+  };
+
+  const activeApprovalState = template.approvalState || 'draft';
+
   return (
-    <div id="editor-sidebar" className="w-full lg:w-80 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden shadow-xs select-none">
-      {/* Sidebar Tabs - Bento Style Tab Selection bar */}
-      <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex space-x-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
+    <div id="editor-sidebar" className="w-full lg:w-80 rounded-xl border border-ink-2/50 bg-ink flex flex-col h-full overflow-hidden shadow-xl select-none text-text-on-ink">
+      {/* 2-Row Bento Style Tab Selection grid */}
+      <div className="p-3 border-b border-ink-2/40 bg-ink">
+        <div className="grid grid-cols-3 gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50">
           <button
             id="tab-blocks"
             onClick={() => setActiveTab('blocks')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
               activeTab === 'blocks'
-                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200/40 dark:border-slate-700/50'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
             }`}
+            title="Content block builder elements"
           >
-            Blocks
+            <Boxes className="h-3.5 w-3.5" />
+            <span>Blocks</span>
           </button>
+          
           <button
-            id="tab-settings"
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              activeTab === 'settings'
-                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200/40 dark:border-slate-700/50'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            id="tab-patterns"
+            onClick={() => setActiveTab('patterns')}
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+              activeTab === 'patterns'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
             }`}
+            title="Saved Patterns & Synced Global blocks"
           >
-            Settings
+            <FolderHeart className="h-3.5 w-3.5" />
+            <span>Patterns</span>
           </button>
+
           <button
-            id="tab-templates"
-            onClick={() => setActiveTab('templates')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              activeTab === 'templates'
-                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200/40 dark:border-slate-700/50'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            id="tab-media"
+            onClick={() => setActiveTab('media')}
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+              activeTab === 'media'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
             }`}
+            title="Shared Image asset library"
           >
-            Presets
+            <ImageIcon className="h-3.5 w-3.5" />
+            <span>Media</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1 bg-ink-2 p-1 rounded-lg border border-ink-2/50 mt-1.5">
+          <button
+            id="tab-styles"
+            onClick={() => setActiveTab('styles')}
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+              activeTab === 'styles'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
+            }`}
+            title="Global Style system & Theme switcher"
+          >
+            <Paintbrush className="h-3.5 w-3.5" />
+            <span>Themes</span>
+          </button>
+
+          <button
+            id="tab-presets"
+            onClick={() => setActiveTab('presets')}
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 cursor-pointer ${
+              activeTab === 'presets'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
+            }`}
+            title="Ready-made newsletters presets"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>Presets</span>
+          </button>
+
+          <button
+            id="tab-workflow"
+            onClick={() => setActiveTab('workflow')}
+            className={`py-1.5 text-[10px] font-mono font-bold rounded transition-all uppercase tracking-wider flex flex-col items-center gap-0.5 relative cursor-pointer ${
+              activeTab === 'workflow'
+                ? 'bg-ink text-gold border border-gold/15 shadow-sm'
+                : 'text-text-on-ink-muted hover:text-text-on-ink'
+            }`}
+            title="Simulated Approval Workflow and User Roles"
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            <span>Status</span>
+            {activeApprovalState !== 'draft' && (
+              <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${activeApprovalState === 'approved' ? 'bg-emerald-500' : 'bg-purple-500'}`} />
+            )}
           </button>
         </div>
       </div>
 
       {/* Tab Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-ink">
+        
+        {/* 1. BLOCKS TAB */}
         {activeTab === 'blocks' && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                Content Elements
+              <h3 className="text-sm font-serif font-bold text-paper flex items-center gap-1">
+                Content Inserter
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-[11px] text-text-on-ink-muted mt-1 leading-relaxed">
                 Drag blocks onto the central canvas, or click any element to append it directly.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {blockDefinitions.map((block) => (
-                <div
-                  id={`block-item-${block.type}`}
-                  key={block.type}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, block.type)}
-                  onClick={() => onAddBlock(block.type)}
-                  className="aspect-square border-2 border-dashed border-slate-200/50 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center space-y-2 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 cursor-grab active:cursor-grabbing transition-all text-center group bg-slate-50 dark:bg-slate-900/40 relative overflow-hidden"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/40 dark:border-slate-700/50 shadow-xs flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {block.icon}
+            {Object.entries(categorizedBlocks).map(([category, blocks]) => {
+              if (blocks.length === 0) return null;
+              return (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-[10px] font-mono font-bold text-gold/85 uppercase tracking-widest border-b border-ink-2/50 pb-1">
+                    {category} Elements
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {blocks.map((block) => {
+                      const IconComponent = block.icon;
+                      return (
+                        <div
+                          id={`block-item-${block.type}`}
+                          key={block.type}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, block.type)}
+                          onClick={() => onAddBlock(block.type)}
+                          className="p-3 border border-dashed border-ink-2 rounded-lg flex flex-col items-center justify-center text-center hover:border-gold/50 hover:bg-ink-2/30 cursor-grab active:cursor-grabbing transition-all relative group bg-ink-2/15"
+                        >
+                          <div className="w-9 h-9 rounded bg-ink border border-ink-2 flex items-center justify-center text-text-on-ink-muted group-hover:bg-ink-2 group-hover:text-gold transition-colors">
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-text-on-ink-muted mt-2 group-hover:text-paper transition-colors">
+                            {block.label}
+                          </span>
+                          <span className="text-[9px] text-text-on-ink-muted/75 line-clamp-1 mt-0.5 px-1">
+                            {block.description}
+                          </span>
+                          <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-gold text-ink rounded-full p-0.5 pointer-events-none">
+                            <Plus className="h-2.5 w-2.5" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
-                    {block.label}
-                  </span>
-                  
-                  {/* Plus icon on hover */}
-                  <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-600 text-white rounded-full p-0.5 pointer-events-none shadow-xs">
-                    <Plus className="h-2.5 w-2.5" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 2. PATTERNS & SYNCED BLOCKS TAB */}
+        {activeTab === 'patterns' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-serif font-bold text-paper">Patterns & Global Blocks</h3>
+              <p className="text-[11px] text-text-on-ink-muted mt-1 leading-relaxed">
+                Insert pre-designed layouts. <strong className="text-gold font-semibold">Synced Global Blocks</strong> stay synchronized across all templates.
+              </p>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-text-on-ink-muted" />
+                <input
+                  type="text"
+                  placeholder="Search saved patterns..."
+                  value={patternSearch}
+                  onChange={(e) => setPatternSearch(e.target.value)}
+                  className="w-full text-xs pl-8 pr-3 py-2 border border-ink-2/60 rounded bg-ink-2 text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/50"
+                />
+              </div>
+
+              {/* Categories */}
+              <div className="flex flex-wrap gap-1.5">
+                {['all', 'header', 'footer', 'cta', 'product', 'general'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setPatternCategory(cat)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-all cursor-pointer ${
+                      patternCategory === cat
+                        ? 'bg-gold text-ink shadow-sm'
+                        : 'bg-ink-2 text-text-on-ink-muted hover:text-text-on-ink hover:bg-ink-2/80'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List of custom patterns */}
+            <div className="space-y-2.5 pt-2">
+              {filteredPatterns.map((shared) => (
+                <div
+                  key={shared.id}
+                  className={`p-3 rounded border transition-all relative group flex justify-between items-center bg-ink-2/15 ${
+                    shared.isGlobal 
+                      ? 'border-emerald-950/40 hover:border-emerald-500/40' 
+                      : 'border-ink-2 hover:border-gold/30'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0 pr-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-paper truncate">
+                        {shared.name}
+                      </span>
+                      <span className={`text-[8px] font-mono font-bold px-1.5 py-0.2 rounded uppercase ${
+                        shared.isGlobal 
+                          ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-900/40' 
+                          : 'bg-ink-2 text-gold border border-gold/10'
+                      }`}>
+                        {shared.isGlobal ? 'Synced' : 'Pattern'}
+                      </span>
+                    </div>
+                    <p className="text-[9px] text-text-on-ink-muted/70 mt-1 capitalize">
+                      Category: {shared.category} • {shared.block.type} block
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => onAddBlockFromShared && onAddBlockFromShared(shared.id)}
+                      className={`p-1 rounded transition-colors cursor-pointer ${
+                        shared.isGlobal 
+                          ? 'bg-emerald-950 text-emerald-400 hover:bg-emerald-500 hover:text-white' 
+                          : 'bg-ink text-gold border border-gold/15 hover:bg-gold hover:text-ink'
+                      }`}
+                      title="Insert block pattern"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                    {onDeleteSharedBlock && (
+                      <button
+                        onClick={() => onDeleteSharedBlock(shared.id)}
+                        className="p-1 rounded text-text-on-ink-muted hover:bg-red-950/40 hover:text-red-400 transition-colors cursor-pointer"
+                        title="Delete from Library"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
-            </div>
 
-            {/* Saved Styles Section */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Sliders className="h-4 w-4 text-blue-500" />
-                  Saved Styles Presets
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Save a block's layout configuration as a reusable style preset, and apply it instantly onto other elements.
-                </p>
-              </div>
-
-              {/* Save current block style interface */}
-              {selectedBlock ? (
-                <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/80 p-3 rounded-xl space-y-2.5">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider mb-1">
-                      Save Current Block Style ({selectedBlock.type})
-                    </span>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        placeholder="Style Name (e.g. Hero Heading)"
-                        value={newStylePresetName}
-                        onChange={(e) => setNewStylePresetName(e.target.value)}
-                        className="flex-1 text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:border-blue-500 outline-none"
-                      />
-                      <button
-                        onClick={handleSaveCurrentStyle}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-[11px] text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 p-3 rounded-xl text-center">
-                  Select any block on the canvas to save its custom style configuration as a reusable preset!
+              {filteredPatterns.length === 0 && (
+                <div className="text-center py-6 border border-dashed border-ink-2 rounded">
+                  <Sliders className="h-6 w-6 text-text-on-ink-muted mx-auto mb-1.5" />
+                  <p className="text-[11px] text-text-on-ink-muted font-bold font-mono uppercase tracking-wider">
+                    No matching patterns found.
+                  </p>
+                  <p className="text-[9px] text-text-on-ink-muted/70 mt-1 max-w-[200px] mx-auto leading-relaxed">
+                    Select a block on canvas and click Bookmark/Refresh to save current content!
+                  </p>
                 </div>
               )}
-
-              {/* Presets list */}
-              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                {savedStylePresets.map((preset) => (
-                  <div
-                    key={preset.id}
-                    className="group flex items-center justify-between p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-950/20 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-slate-900/60 transition-all text-xs"
-                  >
-                    <button
-                      onClick={() => handleApplyStylePreset(preset.style)}
-                      disabled={!selectedBlock}
-                      title={selectedBlock ? `Apply style preset "${preset.name}"` : 'Select a block to apply this style preset'}
-                      className="flex-1 text-left flex items-center gap-2 mr-2 cursor-pointer disabled:cursor-not-allowed group min-w-0"
-                    >
-                      <div className="w-6 h-6 rounded-md bg-white dark:bg-slate-800 border border-slate-200/40 dark:border-slate-700/60 flex items-center justify-center text-[10px] font-bold shrink-0 text-slate-550 dark:text-slate-450 uppercase group-hover:bg-blue-50 dark:group-hover:bg-blue-950/30 group-hover:text-blue-600 transition-colors">
-                        {preset.type[0]}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {preset.name}
-                        </span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-550 uppercase tracking-widest font-semibold font-sans">
-                          {preset.type} • {Object.keys(preset.style).length} rules
-                        </span>
-                      </div>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDeleteStylePreset(preset.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 text-slate-400 dark:text-slate-550 transition-all cursor-pointer shrink-0"
-                      title="Delete Preset"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-
-                {savedStylePresets.length === 0 && (
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center py-2">
-                    No custom style presets created yet.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/30 rounded-xl p-3 flex gap-2.5 mt-6">
-              <HelpCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                <span className="font-semibold block mb-0.5">Tip for Creators:</span>
-                Rearrange existing sections inside the canvas by dragging their handles, or select individual elements to fine-tune margin, paddings, and background colors.
-              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'settings' && (
+        {/* 3. MEDIA LIBRARY TAB */}
+        {activeTab === 'media' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-serif font-bold text-paper">Asset Media Library</h3>
+                <p className="text-[11px] text-text-on-ink-muted mt-0.5">Manage and inject brand images.</p>
+              </div>
+              <button
+                onClick={() => setShowAddMediaForm(!showAddMediaForm)}
+                className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-gold text-ink rounded hover:bg-gold/90 transition-colors cursor-pointer"
+              >
+                {showAddMediaForm ? 'Cancel' : 'Add Image'}
+              </button>
+            </div>
+
+            {/* Image upload simulation form */}
+            {showAddMediaForm && (
+              <form onSubmit={handleCreateMedia} className="p-3 bg-ink-2 rounded border border-ink-2/60 space-y-2.5">
+                <div>
+                  <label className="block text-[9px] font-mono font-bold text-gold uppercase tracking-widest mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://images.unsplash.com/..."
+                    value={newMediaUrl}
+                    onChange={(e) => setNewMediaUrl(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/40"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[9px] font-mono font-bold text-gold uppercase tracking-widest mb-1">Friendly Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Watch Banner"
+                      value={newMediaName}
+                      onChange={(e) => setNewMediaName(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-mono font-bold text-gold uppercase tracking-widest mb-1">Category</label>
+                    <select
+                      value={newMediaCategory}
+                      onChange={(e) => setNewMediaCategory(e.target.value as any)}
+                      className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                    >
+                      <option value="general">General</option>
+                      <option value="logos">Logos</option>
+                      <option value="banners">Banners</option>
+                      <option value="products">Products</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-mono font-bold text-gold uppercase tracking-widest mb-1">Alt Text (Accessibility)</label>
+                  <input
+                    type="text"
+                    placeholder="Describe image content..."
+                    value={newMediaAlt}
+                    onChange={(e) => setNewMediaAlt(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/40"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-1.5 bg-gold hover:bg-gold/90 text-ink font-mono font-bold text-xs uppercase tracking-wider rounded transition-all cursor-pointer"
+                >
+                  Save Image to Account
+                </button>
+              </form>
+            )}
+
+            {/* Media Search & Category Filtering */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-text-on-ink-muted" />
+                <input
+                  type="text"
+                  placeholder="Search media..."
+                  value={mediaSearch}
+                  onChange={(e) => setMediaSearch(e.target.value)}
+                  className="w-full text-xs pl-8 pr-3 py-2 border border-ink-2/60 rounded bg-ink-2 text-text-on-ink outline-none focus:border-gold placeholder:text-text-on-ink-muted/40"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {['all', 'logos', 'banners', 'products', 'general'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setMediaCategory(cat)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-all cursor-pointer ${
+                      mediaCategory === cat
+                        ? 'bg-gold text-ink shadow-sm'
+                        : 'bg-ink-2 text-text-on-ink-muted hover:text-text-on-ink hover:bg-ink-2/80'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Media grid list */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              {filteredMedia.map((asset) => {
+                const hasMissingAlt = !asset.altText || asset.altText === '';
+                return (
+                  <div key={asset.id} className="border border-ink-2 bg-ink-2/15 rounded-lg p-2 flex flex-col justify-between group relative overflow-hidden">
+                    <div className="relative aspect-video rounded overflow-hidden bg-ink-2 mb-1.5">
+                      <img
+                        src={asset.url}
+                        alt={asset.altText}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Alt text warnings */}
+                      {hasMissingAlt && (
+                        <div className="absolute top-1 right-1 bg-seal text-paper p-0.5 rounded-full shadow-md" title="Missing Alt Text (Required for accessibility)">
+                          <AlertCircle className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 mb-2">
+                      <h4 className="text-[10px] font-bold text-paper truncate" title={asset.name}>
+                        {asset.name}
+                      </h4>
+                      <p className="text-[8px] font-mono text-text-on-ink-muted truncate mt-0.5">
+                        {asset.category.toUpperCase()}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1">
+                      <button
+                        onClick={() => handleApplyMediaToSelected(asset.url)}
+                        disabled={!selectedBlock || !['image', 'productCard', 'hero', 'imageGrid'].includes(selectedBlock.type)}
+                        className="col-span-2 py-1 px-1 text-[9px] bg-gold/10 hover:bg-gold text-gold hover:text-ink rounded font-bold disabled:opacity-35 disabled:pointer-events-none transition-colors cursor-pointer"
+                        title="Inject into current selected canvas block"
+                      >
+                        Apply
+                      </button>
+                      
+                      {onDeleteMediaAsset && (
+                        <button
+                          onClick={() => onDeleteMediaAsset(asset.id)}
+                          className="py-1 px-1 text-[9px] text-text-on-ink-muted hover:text-rose-400 rounded flex items-center justify-center hover:bg-ink-2 transition-colors cursor-pointer"
+                          title="Delete from Library"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {filteredMedia.length === 0 && (
+                <div className="col-span-2 text-center py-6 text-text-on-ink-muted text-xs">
+                  No images found matching criteria.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 4. GLOBAL THEMES & STYLES TAB */}
+        {activeTab === 'styles' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Email Metadata</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control mail envelope settings.</p>
+              <h3 className="text-sm font-serif font-bold text-paper">Global Style Tokens</h3>
+              <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
+                Centralized theme and design variables mapped across all dynamic components.
+              </p>
             </div>
 
-            <div className="space-y-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Email Subject
-                </label>
-                <input
-                  id="input-meta-subject"
-                  type="text"
-                  value={template.subject}
-                  onChange={(e) => onUpdateTemplate({ subject: e.target.value })}
-                  placeholder="e.g. Weekly Updates"
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-slate-800 dark:text-slate-100"
-                />
-              </div>
+            {/* Theme Presets SWITCHER Catalog */}
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-mono font-bold uppercase text-gold/80 tracking-wider">
+                Theme Presets Switcher
+              </h4>
+              <div className="grid grid-cols-1 gap-2">
+                {THEME_PRESETS.map((t) => {
+                  const isActive = template.themeId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => handleSelectTheme(t.id)}
+                      className={`w-full p-2.5 rounded border text-left transition-all relative flex flex-col gap-1.5 cursor-pointer ${
+                        isActive
+                          ? 'border-gold bg-ink-2 shadow-xs ring-1 ring-gold/15'
+                          : 'border-ink-2 hover:border-gold/35 bg-ink-2/15'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-xs font-bold text-paper">
+                          {t.name}
+                        </span>
+                        {isActive && (
+                          <span className="bg-gold text-ink rounded-full p-0.5">
+                            <Check className="h-2.5 w-2.5" />
+                          </span>
+                        )}
+                      </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Preview Subtitle text
-                </label>
-                <textarea
-                  id="input-meta-subtitle"
-                  rows={2}
-                  value={template.subtitle}
-                  onChange={(e) => onUpdateTemplate({ subtitle: e.target.value })}
-                  placeholder="Teaser paragraph shown in inboxes..."
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-slate-800 dark:text-slate-100 resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Brand Identity & Colors</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Quick-apply palette for blocks and buttons.</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800">
-              <div className="flex flex-col items-center gap-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Primary</label>
-                <input
-                  type="color"
-                  value={template.globalSettings.brandColors?.primary || '#3b82f6'}
-                  onChange={(e) => updateBrandColor('primary', e.target.value)}
-                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
-                />
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Secondary</label>
-                <input
-                  type="color"
-                  value={template.globalSettings.brandColors?.secondary || '#6366f1'}
-                  onChange={(e) => updateBrandColor('secondary', e.target.value)}
-                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
-                />
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Accent</label>
-                <input
-                  type="color"
-                  value={template.globalSettings.brandColors?.accent || '#f43f5e'}
-                  onChange={(e) => updateBrandColor('accent', e.target.value)}
-                  className="w-full h-8 rounded-lg cursor-pointer overflow-hidden p-0 border border-slate-200 dark:border-slate-700"
-                />
+                      <div className="flex justify-between items-center w-full">
+                        {/* Swatches indicator */}
+                        <div className="flex gap-1.5">
+                          <span className="w-4.5 h-4.5 rounded-full border border-ink shadow-2xs block" style={{ backgroundColor: t.colors.primary }} />
+                          <span className="w-4.5 h-4.5 rounded-full border border-ink shadow-2xs block" style={{ backgroundColor: t.colors.secondary }} />
+                          <span className="w-4.5 h-4.5 rounded-full border border-ink shadow-2xs block" style={{ backgroundColor: t.colors.accent }} />
+                          <span className="w-4.5 h-4.5 rounded-full border border-ink shadow-2xs block" style={{ backgroundColor: t.colors.background }} />
+                        </div>
+                        {/* Font info */}
+                        <span className="text-[8px] font-mono text-text-on-ink-muted truncate max-w-40">
+                          {t.typography.headingFont.split(',')[0]}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Layout Engine & Dimensions</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Configure rendering model and container sizes.</p>
-            </div>
+            {/* Custom Palette and Design Token Overrides */}
+            <div className="pt-2 border-t border-ink-2/40 space-y-3.5">
+              <h4 className="text-[10px] font-mono font-bold uppercase text-gold/80 tracking-wider">
+                Custom Palette Overrides
+              </h4>
 
-            <div className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                  Layout Model
-                </label>
-                <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800">
-                  <button
-                    id="layout-mode-flow"
-                    type="button"
-                    onClick={() => updateGlobalSetting('layoutMode', 'flow')}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      template.globalSettings.layoutMode !== 'figma'
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    Classic Flow
-                  </button>
-                  <button
-                    id="layout-mode-figma"
-                    type="button"
-                    onClick={() => updateGlobalSetting('layoutMode', 'figma')}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      template.globalSettings.layoutMode === 'figma'
-                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    🎨 Figma Canvas
-                  </button>
+              {/* Brand palette config */}
+              <div className="grid grid-cols-3 gap-2 bg-ink-2/20 p-3 rounded border border-ink-2">
+                <div className="flex flex-col items-center gap-1.5">
+                  <label className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase tracking-tight">Primary</label>
+                  <input
+                    type="color"
+                    value={template.globalSettings.brandColors?.primary || '#3b82f6'}
+                    onChange={(e) => updateBrandColor('primary', e.target.value)}
+                    className="w-full h-8 rounded cursor-pointer overflow-hidden p-0 border border-ink-2 bg-transparent"
+                  />
                 </div>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                  {template.globalSettings.layoutMode === 'figma'
-                    ? 'Figma Mode: Move items freely, drag to resize, set coordinates and depth layers (z-index).'
-                    : 'Classic Flow Mode: Standard vertical element stacking. Ideal for production email deliverability.'}
-                </p>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    Content Width
-                  </label>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-850 px-1.5 py-0.5 rounded">
-                    {template.globalSettings.contentWidth}px
-                  </span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <label className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase tracking-tight">Secondary</label>
+                  <input
+                    type="color"
+                    value={template.globalSettings.brandColors?.secondary || '#6366f1'}
+                    onChange={(e) => updateBrandColor('secondary', e.target.value)}
+                    className="w-full h-8 rounded cursor-pointer overflow-hidden p-0 border border-ink-2 bg-transparent"
+                  />
                 </div>
-                <input
-                  id="input-global-width"
-                  type="range"
-                  min="400"
-                  max="800"
-                  step="10"
-                  value={template.globalSettings.contentWidth}
-                  onChange={(e) => updateGlobalSetting('contentWidth', parseInt(e.target.value))}
-                  className="w-full accent-blue-600"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    Border Corner Radius
-                  </label>
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-850 px-1.5 py-0.5 rounded">
-                    {template.globalSettings.borderRadius}px
-                  </span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <label className="text-[9px] font-mono font-bold text-text-on-ink-muted uppercase tracking-tight">Accent</label>
+                  <input
+                    type="color"
+                    value={template.globalSettings.brandColors?.accent || '#f43f5e'}
+                    onChange={(e) => updateBrandColor('accent', e.target.value)}
+                    className="w-full h-8 rounded cursor-pointer overflow-hidden p-0 border border-ink-2 bg-transparent"
+                  />
                 </div>
-                <input
-                  id="input-global-radius"
-                  type="range"
-                  min="0"
-                  max="32"
-                  step="2"
-                  value={template.globalSettings.borderRadius}
-                  onChange={(e) => updateGlobalSetting('borderRadius', parseInt(e.target.value))}
-                  className="w-full accent-blue-600"
-                />
+              </div>
+            </div>
+
+            {/* Layout Dimensions */}
+            <div className="pt-2 border-t border-ink-2/40 space-y-3">
+              <h4 className="text-[10px] font-mono font-bold uppercase text-gold/80 tracking-wider">
+                Dimensions & Canvas Options
+              </h4>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted mb-1">Canvas Width</label>
+                  <input
+                    type="number"
+                    value={template.globalSettings.contentWidth}
+                    onChange={(e) => updateGlobalSetting('contentWidth', Number(e.target.value))}
+                    className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                    min={480}
+                    max={800}
+                    step={10}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted mb-1">Corner Rounding</label>
+                  <input
+                    type="number"
+                    value={template.globalSettings.borderRadius}
+                    onChange={(e) => updateGlobalSetting('borderRadius', Number(e.target.value))}
+                    className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                    min={0}
+                    max={32}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Primary Font Family
-                </label>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted mb-1">Canvas Background</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={template.globalSettings.contentBg}
+                    onChange={(e) => updateGlobalSetting('contentBg', e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border border-ink-2 p-0"
+                  />
+                  <input
+                    type="text"
+                    value={template.globalSettings.contentBg}
+                    onChange={(e) => updateGlobalSetting('contentBg', e.target.value)}
+                    className="flex-1 text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted mb-1">Global Font Family</label>
                 <select
-                  id="select-global-font"
                   value={template.globalSettings.fontFamily}
                   onChange={(e) => updateGlobalSetting('fontFamily', e.target.value)}
-                  className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-slate-100 cursor-pointer"
+                  className="w-full text-xs px-2.5 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
                 >
-                  <optgroup label="Sans-Serif (Modern)">
-                    <option value='"Inter", sans-serif'>Inter (App Standard)</option>
-                    <option value='Arial, Helvetica, sans-serif'>Arial / Helvetica</option>
-                    <option value='"Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif'>Trebuchet MS</option>
-                    <option value='"Verdana", Geneva, sans-serif'>Verdana</option>
-                    <option value='"Tahoma", Geneva, sans-serif'>Tahoma</option>
-                    <option value='"Lucida Sans Unicode", "Lucida Grande", sans-serif'>Lucida Sans</option>
-                  </optgroup>
-                  <optgroup label="Serif (Traditional)">
-                    <option value='"Georgia", serif'>Georgia</option>
-                    <option value='"Times New Roman", Times, serif'>Times New Roman</option>
-                    <option value='"Palatino Linotype", "Book Antiqua", Palatino, serif'>Palatino</option>
-                  </optgroup>
-                  <optgroup label="Monospace (Code)">
-                    <option value='"Courier New", Courier, monospace'>Courier New</option>
-                    <option value='"Lucida Console", Monaco, monospace'>Lucida Console</option>
-                  </optgroup>
+                  <option value='"Inter", sans-serif'>Inter (Sans-serif)</option>
+                  <option value='"Playfair Display", Georgia, serif'>Playfair (Elegant Serif)</option>
+                  <option value='"Space Grotesk", sans-serif'>Space Grotesk (Tech Modern)</option>
+                  <option value='"Outfit", sans-serif'>Outfit (Geometric)</option>
+                  <option value='"JetBrains Mono", monospace'>JetBrains Mono (Technical)</option>
                 </select>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-                  Note: These are "web-safe" fonts with high compatibility across Gmail, Outlook, and Apple Mail.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Outer Background
-                  </label>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      id="input-global-outer-bg"
-                      type="color"
-                      value={template.globalSettings.backgroundColor}
-                      onChange={(e) => updateGlobalSetting('backgroundColor', e.target.value)}
-                      className="w-7 h-7 rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer overflow-hidden p-0"
-                    />
-                    <input
-                      type="text"
-                      value={template.globalSettings.backgroundColor}
-                      onChange={(e) => updateGlobalSetting('backgroundColor', e.target.value)}
-                      className="w-full text-[10px] font-mono px-1.5 py-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Inner Background
-                  </label>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      id="input-global-inner-bg"
-                      type="color"
-                      value={template.globalSettings.contentBg}
-                      onChange={(e) => updateGlobalSetting('contentBg', e.target.value)}
-                      className="w-7 h-7 rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer overflow-hidden p-0"
-                    />
-                    <input
-                      type="text"
-                      value={template.globalSettings.contentBg}
-                      onChange={(e) => updateGlobalSetting('contentBg', e.target.value)}
-                      className="w-full text-[10px] font-mono px-1.5 py-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
-                    />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'templates' && (
+        {/* 5. READY-MADE PRESETS TAB */}
+        {activeTab === 'presets' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Ready-made Presets</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Load high-converting layout foundations. This replaces your current active canvas template content.
+              <h3 className="text-sm font-serif font-bold text-paper">Starter Foundations</h3>
+              <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
+                Load high-converting templates. This will replace active canvas elements.
               </p>
             </div>
 
@@ -656,103 +847,159 @@ export default function Sidebar({
                   id={`preset-load-${tpl.id}`}
                   key={tpl.id}
                   onClick={() => onLoadTemplate(tpl)}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all flex flex-col gap-1.5 group ${
+                  className={`w-full text-left p-3.5 rounded border transition-all flex flex-col gap-1.5 group cursor-pointer ${
                     template.id === tpl.id 
-                      ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-950/20 ring-1 ring-blue-500' 
-                      : 'border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-slate-50/50 dark:hover:bg-slate-850/50'
+                      ? 'border-gold bg-ink-2 ring-1 ring-gold/15' 
+                      : 'border-ink-2 hover:border-gold/30 hover:bg-ink-2/10'
                   }`}
                 >
                   <div className="flex justify-between items-center w-full">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="text-xs font-bold text-paper group-hover:text-gold transition-colors">
                       {tpl.name}
                     </span>
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
+                    <span className="text-[9px] bg-ink border border-ink-2 text-text-on-ink-muted px-1.5 py-0.5 rounded font-mono font-bold">
                       {tpl.blocks.length} blocks
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                    Subject: "{tpl.subject}"
-                  </span>
+                  <p className="text-[10px] text-text-on-ink-muted/80">
+                    {tpl.subject}
+                  </p>
                 </button>
               ))}
             </div>
+          </div>
+        )}
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-center">
-              <button
-                id="btn-reset-blank"
-                onClick={() => onLoadTemplate({
-                  id: 'blank-template',
-                  name: 'Blank slate',
-                  subject: 'Default Marketing Campaign',
-                  subtitle: 'This is the preview text shown in modern mail client inboxes.',
-                  globalSettings: {
-                    backgroundColor: '#f4f4f5',
-                    contentWidth: 600,
-                    contentBg: '#ffffff',
-                    fontFamily: '"Inter", sans-serif',
-                    borderRadius: 8,
-                    brandColors: {
-                      primary: '#3b82f6',
-                      secondary: '#6366f1',
-                      accent: '#f43f5e',
-                    },
-                  },
-                  blocks: [
-                    {
-                      id: 'header-blank-1',
-                      type: 'header',
-                      content: 'Custom Header Title',
-                      style: {
-                        color: '#111827',
-                        textAlign: 'center',
-                        fontSize: '24px',
-                        fontWeight: 'bold',
-                        paddingTop: 30,
-                        paddingBottom: 20,
-                        paddingLeft: 20,
-                        paddingRight: 20,
-                      }
-                    }
-                  ]
-                })}
-                className="text-xs font-semibold text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 px-4 py-2 rounded-lg transition-all border border-rose-200/30 dark:border-rose-900/30 flex items-center gap-1.5 cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reset to Blank Canvas
-              </button>
+        {/* 6. APPROVAL WORKFLOW & ROLES TAB */}
+        {activeTab === 'workflow' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-serif font-bold text-paper">Role & Approvals</h3>
+              <p className="text-[11px] text-text-on-ink-muted mt-0.5 leading-relaxed">
+                Enforce marketing locks, roles compliance, and approval review tracking.
+              </p>
+            </div>
+
+            {/* simulated Role Switcher */}
+            <div className="space-y-2 bg-ink-2/15 p-3 rounded border border-ink-2">
+              <label className="text-[9px] font-mono font-bold uppercase text-gold/80 tracking-wider flex items-center gap-1">
+                <Users className="h-3 w-3 text-gold" />
+                Simulate Current Role
+              </label>
+              <div className="grid grid-cols-3 gap-1 bg-ink p-1 rounded">
+                {(['owner', 'editor', 'contributor'] as const).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => onChangeRole && onChangeRole(role)}
+                    className={`py-1 text-[10px] font-mono font-bold rounded transition-all capitalize cursor-pointer ${
+                      currentRole === role
+                        ? 'bg-gold text-ink shadow-sm'
+                        : 'text-text-on-ink-muted hover:text-paper'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Approval State Panel */}
+            <div className="p-4 rounded border border-dashed flex flex-col gap-3.5 bg-ink-2/10 border-ink-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold text-text-on-ink-muted">Campaign Status</span>
+                
+                {activeApprovalState === 'draft' && (
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-ink text-gold rounded border border-gold/15 uppercase tracking-wider">
+                    Drafting
+                  </span>
+                )}
+                {activeApprovalState === 'in_review' && (
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-seal text-paper rounded uppercase tracking-wider">
+                    In Review
+                  </span>
+                )}
+                {activeApprovalState === 'approved' && (
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-900/40 rounded uppercase tracking-wider">
+                    Approved
+                  </span>
+                )}
+              </div>
+
+              {/* Status information descriptions */}
+              <p className="text-[11px] text-text-on-ink-muted/80 leading-relaxed">
+                {activeApprovalState === 'draft' && 'The campaign is currently in development. You can submit it for owner/editor review when ready.'}
+                {activeApprovalState === 'in_review' && 'The draft is in review. Owner or Editor permission is required to lock edits and mark as Approved.'}
+                {activeApprovalState === 'approved' && '🎉 Approved! Campaign layout is locked and verified. Editing any element will automatically reset status back to review.'}
+              </p>
+
+              {/* Dynamic Action Buttons */}
+              <div className="pt-2">
+                {currentRole === 'contributor' ? (
+                  activeApprovalState === 'draft' ? (
+                    <button
+                      onClick={() => onUpdateTemplate({ approvalState: 'in_review' })}
+                      className="w-full py-2 bg-gold hover:bg-gold/90 text-ink font-mono font-bold text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Submit for Review</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  ) : (
+                    <div className="p-2.5 bg-seal/10 rounded border border-seal/25 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-seal shrink-0 mt-0.5" />
+                      <span className="text-[10px] text-paper font-semibold leading-normal">
+                        Approval is locked. Contributor role cannot approve drafts. Ask an Owner or Editor to sign-off.
+                      </span>
+                    </div>
+                  )
+                ) : (
+                  /* Owner or Editor Controls */
+                  <div className="flex flex-col gap-2">
+                    {activeApprovalState !== 'approved' ? (
+                      <button
+                        onClick={() => onUpdateTemplate({ approvalState: 'approved' })}
+                        className="w-full py-2 bg-gold hover:bg-gold/90 text-ink font-mono font-bold text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Approve Layout</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onUpdateTemplate({ approvalState: 'draft' })}
+                        className="w-full py-2 bg-ink text-text-on-ink-muted border border-ink-2 hover:border-gold/30 hover:text-paper font-mono font-bold text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                        <span>Return to Draft</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Simulated Activity Timeline Log */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-[10px] font-mono font-bold uppercase text-gold/80 tracking-wider">
+                Approval Event Logs
+              </h4>
+
+              <div className="space-y-3.5 pl-3 border-l border-ink-2 relative font-sans">
+                <div className="relative">
+                  <div className="absolute -left-[16.5px] top-1 w-2 h-2 rounded-full bg-gold ring-4 ring-ink" />
+                  <p className="text-[10px] font-bold text-paper leading-none">Campaign Draft Initiated</p>
+                  <p className="text-[9px] text-text-on-ink-muted mt-1 font-mono">By Contributor • Just now</p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute -left-[16.5px] top-1 w-2 h-2 rounded-full bg-seal ring-4 ring-ink" />
+                  <p className="text-[10px] font-bold text-paper leading-none">Starter Template Loaded</p>
+                  <p className="text-[9px] text-text-on-ink-muted mt-1 font-mono">Theme presets synchronized • 2m ago</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Footer Settings Summary & Branding */}
-      <div className="mt-auto p-4 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-800">
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight uppercase font-bold mb-2">Template Settings</p>
-        <div className="space-y-2 mb-3">
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Width</span>
-            <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-850 border border-slate-200/50 dark:border-slate-750 px-1.5 py-0.5 rounded shadow-2xs">
-              {template.globalSettings.contentWidth}px
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Background</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-500 uppercase">
-                {template.globalSettings.contentBg}
-              </span>
-              <div 
-                className="w-4 h-4 rounded border border-slate-200/60 dark:border-slate-700 shadow-xs"
-                style={{ backgroundColor: template.globalSettings.contentBg }}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="pt-2.5 border-t border-slate-200/50 dark:border-slate-850 text-center">
-          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono tracking-wider block uppercase">
-            Dost_MailKit • React & MJML
-          </span>
-        </div>
       </div>
     </div>
   );

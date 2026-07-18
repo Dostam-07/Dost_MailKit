@@ -155,6 +155,7 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
     subject: 'Issue #42: Unlocking design productivity in 2026 📈',
     subtitle: 'Plus: The rise of AI-assisted templating systems and weekly design roundups.',
     thumbnail: '/src/assets/images/newsletter_template_thumb_1784298270073.jpg',
+    isFeatured: true,
     globalSettings: {
       backgroundColor: '#fdfdfd',
       contentWidth: 600,
@@ -284,6 +285,7 @@ export const STARTER_TEMPLATES: EmailTemplate[] = [
     subject: 'Last Chance: 35% Off Everything in our Store! 🏷️',
     subtitle: 'Use code SUMMERSALE at checkout. Sale ends in less than 24 hours.',
     thumbnail: '/src/assets/images/promo_template_thumb_1784298280669.jpg',
+    isAiGenerated: true,
     globalSettings: {
       backgroundColor: '#090d16',
       contentWidth: 600,

@@ -139,39 +139,39 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
   if (!selectedBlock) {
     return (
       <div className="w-80 flex flex-col gap-4 shrink-0 select-none">
-        <div id="inspector-empty-state" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6 text-center select-none shadow-xs">
-          <Sliders className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3 animate-pulse" />
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">No Element Selected</h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 max-w-[200px] leading-relaxed">
+        <div id="inspector-empty-state" className="rounded border border-ink-2 bg-ink-2/10 flex flex-col justify-center items-center p-6 text-center select-none">
+          <Sliders className="h-10 w-10 text-gold mb-3" />
+          <h3 className="text-sm font-serif font-bold text-paper">No Element Selected</h3>
+          <p className="text-xs text-text-on-ink-muted mt-1.5 max-w-[200px] leading-relaxed">
             Click on any text, button, or image section inside the canvas to edit its properties, margins, or URLs.
           </p>
         </div>
 
         {/* Template Fallback Variables Card */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col">
-          <div className="flex items-center gap-2 mb-3 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <TypeIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+        <div className="rounded border border-ink-2 bg-ink-2/15 p-5 flex flex-col">
+          <div className="flex items-center gap-2 mb-3 border-b border-ink-2/40 pb-2.5">
+            <TypeIcon className="h-4 w-4 text-gold" />
+            <h4 className="text-[11px] font-mono font-bold text-gold uppercase tracking-wider">
               Template Variables
             </h4>
           </div>
 
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-3 leading-relaxed">
-            Define default values for placeholders like <code className="bg-slate-100 dark:bg-slate-950 px-1 py-0.5 rounded font-mono font-bold text-blue-600">{"{{first_name}}"}</code> to preview real-time substitutions.
+          <p className="text-[11px] text-text-on-ink-muted mb-3 leading-relaxed">
+            Define default values for placeholders like <code className="bg-ink px-1.5 py-0.5 rounded font-mono font-bold text-gold">{"{{first_name}}"}</code> to preview real-time substitutions.
           </p>
 
           {/* List of active variables */}
           <div className="space-y-1.5 max-h-40 overflow-y-auto mb-3 pr-1">
             {Object.keys(template.variables || {}).length === 0 ? (
-              <span className="text-[11px] text-slate-400 dark:text-slate-600 italic block text-center py-2 bg-slate-50 dark:bg-slate-950/40 rounded-lg">
+              <span className="text-[11px] text-text-on-ink-muted/70 italic block text-center py-2 bg-ink rounded">
                 No variables defined yet.
               </span>
             ) : (
               Object.entries(template.variables || {}).map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between gap-1.5 bg-slate-50 dark:bg-slate-950/40 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800/60">
+                <div key={key} className="flex items-center justify-between gap-1.5 bg-ink px-2.5 py-1.5 rounded border border-ink-2/60">
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[10px] font-bold font-mono text-blue-600 dark:text-blue-400 truncate">{"{{" + key + "}}"}</span>
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold truncate">{val}</span>
+                    <span className="text-[10px] font-mono font-bold text-gold truncate">{"{{" + key + "}}"}</span>
+                    <span className="text-[11px] text-text-on-ink-muted font-bold truncate">{val}</span>
                   </div>
                   <button
                     id={`btn-del-var-${key}`}
@@ -180,7 +180,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                       delete updatedVars[key];
                       onUpdateTemplate({ variables: updatedVars });
                     }}
-                    className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                    className="p-1 rounded text-text-on-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
                     title="Delete Variable"
                   >
                     <Trash className="h-3.5 w-3.5" />
@@ -191,8 +191,8 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
           </div>
 
           {/* Add Variable Form */}
-          <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Add Placeholder Variable</span>
+          <div className="border-t border-ink-2/40 pt-3 flex flex-col gap-2">
+            <span className="text-[10px] font-mono font-bold text-gold/80 uppercase tracking-wider">Add Placeholder Variable</span>
             <div className="grid grid-cols-2 gap-1.5">
               <input
                 id="input-new-var-key"
@@ -200,7 +200,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 placeholder="key (e.g. name)"
                 value={newVarKey}
                 onChange={(e) => setNewVarKey(e.target.value.trim().replace(/[{}]/g, ''))}
-                className="text-[11px] px-2 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 focus:border-blue-500 outline-none font-mono text-slate-800 dark:text-slate-200"
+                className="text-[11px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink focus:border-gold outline-none font-mono text-text-on-ink"
               />
               <input
                 id="input-new-var-val"
@@ -208,7 +208,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 placeholder="default value"
                 value={newVarVal}
                 onChange={(e) => setNewVarVal(e.target.value)}
-                className="text-[11px] px-2 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 focus:border-blue-500 outline-none text-slate-800 dark:text-slate-200"
+                className="text-[11px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink focus:border-gold outline-none text-text-on-ink"
               />
             </div>
             <button
@@ -221,7 +221,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 setNewVarVal('');
               }}
               disabled={!newVarKey}
-              className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+              className="py-1.5 px-3 bg-gold hover:bg-gold/90 disabled:opacity-35 text-ink rounded font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               Add Variable
@@ -230,37 +230,37 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         </div>
 
         {/* Global Email Metrics Status Card */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
-          <div className="flex items-center gap-2 mb-3.5 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+        <div className="rounded border border-ink-2 bg-ink-2/15 p-5">
+          <div className="flex items-center gap-2 mb-3.5 border-b border-ink-2/40 pb-2.5">
+            <BarChart3 className="h-4 w-4 text-gold" />
+            <h4 className="text-[11px] font-mono font-bold text-gold uppercase tracking-wider">
               Email Stats & Metrics
             </h4>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60 animate-fade-in">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block">Total Characters</span>
-              <span className="text-sm font-black font-mono text-slate-800 dark:text-slate-200 leading-none block mt-1">
+            <div className="bg-ink p-2.5 rounded border border-ink-2">
+              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Total Characters</span>
+              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
                 {metrics.characterCount}
               </span>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60 animate-fade-in">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block">Image Elements</span>
-              <span className="text-sm font-black font-mono text-slate-800 dark:text-slate-200 leading-none block mt-1">
+            <div className="bg-ink p-2.5 rounded border border-ink-2">
+              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Image Elements</span>
+              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
                 {metrics.imageCount}
               </span>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60 animate-fade-in">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block">Total Words</span>
-              <span className="text-sm font-black font-mono text-slate-800 dark:text-slate-200 leading-none block mt-1">
+            <div className="bg-ink p-2.5 rounded border border-ink-2">
+              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Total Words</span>
+              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1">
                 {metrics.wordCount}
               </span>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60 animate-fade-in">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block">Est. Read Time</span>
-              <span className="text-sm font-black font-mono text-slate-800 dark:text-slate-200 leading-none block mt-1 flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+            <div className="bg-ink p-2.5 rounded border border-ink-2">
+              <span className="text-[10px] font-mono font-bold text-text-on-ink-muted block">Est. Read Time</span>
+              <span className="text-sm font-bold font-mono text-paper leading-none block mt-1 flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5 text-text-on-ink-muted shrink-0" />
                 {metrics.readingTimeStr}
               </span>
             </div>
@@ -399,10 +399,10 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
 
     return (
       <div className="space-y-1">
-        <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+        <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-wider mb-1">
           {label}
         </label>
-        <div className="flex flex-col gap-2 p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
+        <div className="flex flex-col gap-2 p-2 bg-ink border border-ink-2 rounded">
           <div className="flex items-center gap-2">
             {/* Clickable color box */}
             <div className="relative shrink-0">
@@ -414,7 +414,7 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
                 title="Choose custom color"
               />
               <div 
-                className="w-8 h-8 rounded-lg border border-slate-200/80 dark:border-slate-700 shadow-2xs cursor-pointer flex items-center justify-center transition-transform hover:scale-105"
+                className="w-8 h-8 rounded border border-ink-2 shadow-2xs cursor-pointer flex items-center justify-center transition-transform hover:scale-105"
                 style={{ backgroundColor: value || defaultColor }}
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400/50 mix-blend-difference" />
@@ -423,26 +423,26 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
 
             {/* Display value as a styled badge */}
             <div className="flex-1 min-w-0">
-              <span className="block text-[10px] font-mono font-black text-slate-700 dark:text-slate-300 truncate uppercase tracking-wider">
+              <span className="block text-[10px] font-mono font-bold text-gold truncate uppercase tracking-wider">
                 {value || 'Transparent'}
               </span>
-              <span className="block text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5">
+              <span className="block text-[8px] font-mono text-text-on-ink-muted uppercase tracking-widest leading-none mt-0.5">
                 Click box to open picker
               </span>
             </div>
           </div>
 
           {/* Quick-select color swatches */}
-          <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-slate-200/30 dark:border-slate-800/50">
+          <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-ink-2/30">
             {swatches.map((color) => (
               <button
                 key={color}
                 type="button"
                 onClick={() => onChange(color)}
-                className={`w-5.5 h-5.5 rounded-md border shadow-3xs hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+                className={`w-5.5 h-5.5 rounded border shadow-3xs hover:scale-110 active:scale-95 transition-all cursor-pointer ${
                   value === color 
-                    ? 'border-blue-500 ring-2 ring-blue-500/20 scale-105' 
-                    : 'border-slate-200 dark:border-slate-800'
+                    ? 'border-gold ring-2 ring-gold/15 scale-105' 
+                    : 'border-ink-2'
                 }`}
                 style={{ backgroundColor: color }}
                 title={`Select ${color}`}
@@ -455,38 +455,38 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
   };
 
   return (
-    <div id="editor-inspector" className="w-full lg:w-80 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden shadow-xs select-none">
+    <div id="editor-inspector" className="w-full lg:w-80 rounded border border-ink-2 bg-ink flex flex-col h-full overflow-hidden select-none">
       {/* Title / Header */}
-      <div className="flex flex-col shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col shrink-0 bg-ink border-b border-ink-2">
         <div className="h-14 flex items-center px-4 justify-between">
           <div className="flex items-center gap-2">
-            <Sliders className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+            <Sliders className="h-4 w-4 text-gold" />
+            <h3 className="text-xs font-mono font-bold text-paper uppercase tracking-wider">
               {type} inspector
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-mono text-text-on-ink-muted bg-ink-2 px-1.5 py-0.5 rounded border border-ink-2/50">
             {id.slice(0, 8)}
           </span>
         </div>
         
         {/* Tabs */}
-        <div className="flex w-full border-t border-slate-100 dark:border-slate-800">
+        <div className="flex w-full border-t border-ink-2">
           <button 
             onClick={() => setActiveTab('content')}
-            className={`flex-1 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors ${activeTab === 'content' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/10' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'content' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
           >
             Content
           </button>
           <button 
             onClick={() => setActiveTab('style')}
-            className={`flex-1 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors ${activeTab === 'style' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/10' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'style' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
           >
             Style
           </button>
           <button 
             onClick={() => setActiveTab('layout')}
-            className={`flex-1 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors ${activeTab === 'layout' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/10' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider uppercase transition-colors cursor-pointer ${activeTab === 'layout' ? 'text-gold border-b-2 border-gold bg-ink-2/30' : 'text-text-on-ink-muted hover:bg-ink-2/20 hover:text-paper'}`}
           >
             Layout
           </button>
@@ -499,9 +499,9 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
         {/* CONTENT TAB */}
         {activeTab === 'content' && (
           <div className="space-y-3 animate-fade-in">
-            <div className="flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-1.5">
-              <TypeIcon className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Content Properties</h4>
+            <div className="flex items-center gap-1.5 border-b border-ink-2/30 pb-1.5">
+              <TypeIcon className="h-3.5 w-3.5 text-gold" />
+              <h4 className="text-xs font-mono font-bold text-gold">Content Properties</h4>
             </div>
 
           {(type === 'header' || type === 'button') && (
@@ -1152,23 +1152,254 @@ export default function Inspector({ selectedBlock, onUpdateBlock, template, onUp
 
           {type === 'imageGrid' && (
             <div className="space-y-4">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Grid Images (3 columns)</span>
-              {(properties.images || []).map((img: any, i: number) => (
-                <div key={i} className="p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950/40">
-                  <label className="block text-[9px] font-semibold text-slate-500 mb-1 uppercase">Image {i + 1} URL</label>
-                  <input 
-                    type="text"
-                    value={img.src}
+              <span className="block text-[10px] font-mono font-bold text-gold uppercase tracking-widest">Image Grid Layout Configuration</span>
+              
+              {/* Grid Column and Row selectors */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-ink-2/15 rounded border border-ink-2">
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-wider mb-1">
+                    Columns ({properties.gridCols || 3})
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={6}
+                    value={properties.gridCols || 3}
                     onChange={(e) => {
-                      const list = [...(properties.images || [])];
-                      list[i] = { ...list[i], src: e.target.value };
-                      updateProperty('images', list);
+                      const newCols = parseInt(e.target.value, 10);
+                      const currentRows = properties.gridRows || 1;
+                      
+                      // Calculate new images array
+                      const targetCount = newCols * currentRows;
+                      let currentImages = [...(properties.images || [])];
+                      if (currentImages.length < targetCount) {
+                        const placeholders = [
+                          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300',
+                          'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300',
+                          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300',
+                          'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300'
+                        ];
+                        const diff = targetCount - currentImages.length;
+                        for (let k = 0; k < diff; k++) {
+                          currentImages.push({
+                            src: placeholders[(currentImages.length + k) % placeholders.length],
+                            alt: `Grid Image ${currentImages.length + 1}`
+                          });
+                        }
+                      } else {
+                        currentImages = currentImages.slice(0, targetCount);
+                      }
+                      
+                      onUpdateBlock(id, {
+                        properties: {
+                          ...properties,
+                          gridCols: newCols,
+                          images: currentImages
+                        }
+                      });
                     }}
-                    className="w-full text-[10px] px-2 py-1 border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-100"
-                    placeholder="Image url"
+                    className="w-full h-1.5 bg-ink border border-ink-2 rounded-lg appearance-none cursor-pointer accent-gold"
                   />
+                  <div className="flex justify-between text-[9px] text-text-on-ink-muted/50 font-mono mt-1">
+                    <span>1</span>
+                    <span>3</span>
+                    <span>6</span>
+                  </div>
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-wider mb-1">
+                    Rows ({properties.gridRows || 1})
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={6}
+                    value={properties.gridRows || 1}
+                    onChange={(e) => {
+                      const newRows = parseInt(e.target.value, 10);
+                      const currentCols = properties.gridCols || 3;
+                      
+                      // Calculate new images array
+                      const targetCount = currentCols * newRows;
+                      let currentImages = [...(properties.images || [])];
+                      if (currentImages.length < targetCount) {
+                        const placeholders = [
+                          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300',
+                          'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300',
+                          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300',
+                          'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300'
+                        ];
+                        const diff = targetCount - currentImages.length;
+                        for (let k = 0; k < diff; k++) {
+                          currentImages.push({
+                            src: placeholders[(currentImages.length + k) % placeholders.length],
+                            alt: `Grid Image ${currentImages.length + 1}`
+                          });
+                        }
+                      } else {
+                        currentImages = currentImages.slice(0, targetCount);
+                      }
+                      
+                      onUpdateBlock(id, {
+                        properties: {
+                          ...properties,
+                          gridRows: newRows,
+                          images: currentImages
+                        }
+                      });
+                    }}
+                    className="w-full h-1.5 bg-ink border border-ink-2 rounded-lg appearance-none cursor-pointer accent-gold"
+                  />
+                  <div className="flex justify-between text-[9px] text-text-on-ink-muted/50 font-mono mt-1">
+                    <span>1</span>
+                    <span>3</span>
+                    <span>6</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gap Size selector */}
+              <div className="p-3 bg-ink-2/15 rounded border border-ink-2">
+                <label className="block text-[10px] font-mono font-bold text-text-on-ink-muted uppercase tracking-wider mb-1 flex justify-between">
+                  <span>Gap Size</span>
+                  <span className="text-gold">{properties.gridGap !== undefined ? properties.gridGap : 8}px</span>
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={40}
+                  step={2}
+                  value={properties.gridGap !== undefined ? properties.gridGap : 8}
+                  onChange={(e) => {
+                    onUpdateBlock(id, {
+                      properties: {
+                        ...properties,
+                        gridGap: parseInt(e.target.value, 10)
+                      }
+                    });
+                  }}
+                  className="w-full h-1.5 bg-ink border border-ink-2 rounded-lg appearance-none cursor-pointer accent-gold"
+                />
+                <div className="flex justify-between text-[9px] text-text-on-ink-muted/50 font-mono mt-1">
+                  <span>0px</span>
+                  <span>10px</span>
+                  <span>20px</span>
+                  <span>40px</span>
+                </div>
+              </div>
+
+              <span className="block text-[10px] font-mono font-bold text-gold uppercase tracking-widest mt-4">Grid Images ({(properties.images || []).length} items)</span>
+              
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                {(properties.images || []).map((img: any, i: number) => {
+                  const r = Math.floor(i / (properties.gridCols || 3)) + 1;
+                  const c = (i % (properties.gridCols || 3)) + 1;
+                  return (
+                    <div key={i} className="p-3 border border-ink-2 rounded bg-ink-2/15 space-y-2 relative group/item">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono font-bold text-gold">Image {i + 1} <span className="text-text-on-ink-muted/65">(Row {r}, Col {c})</span></span>
+                        
+                        {/* Move Actions */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              if (i === 0) return;
+                              const list = [...(properties.images || [])];
+                              const temp = list[i - 1];
+                              list[i - 1] = list[i];
+                              list[i] = temp;
+                              updateProperty('images', list);
+                            }}
+                            disabled={i === 0}
+                            className="p-1 rounded bg-ink text-text-on-ink-muted hover:text-gold hover:bg-ink-2 disabled:opacity-35 text-[10px] cursor-pointer"
+                            title="Move Up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (i === (properties.images || []).length - 1) return;
+                              const list = [...(properties.images || [])];
+                              const temp = list[i + 1];
+                              list[i + 1] = list[i];
+                              list[i] = temp;
+                              updateProperty('images', list);
+                            }}
+                            disabled={i === (properties.images || []).length - 1}
+                            className="p-1 rounded bg-ink text-text-on-ink-muted hover:text-gold hover:bg-ink-2 disabled:opacity-35 text-[10px] cursor-pointer"
+                            title="Move Down"
+                          >
+                            ↓
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 items-start">
+                        {/* Mini image preview */}
+                        <div className="w-12 h-12 rounded bg-ink border border-ink-2 overflow-hidden shrink-0">
+                          <img src={img.src} alt="" className="w-full h-full object-cover" />
+                        </div>
+
+                        {/* File Upload Button */}
+                        <div className="flex-1 min-w-0">
+                          <label className="flex items-center gap-1.5 px-2 py-1.5 bg-ink hover:bg-ink-2 text-text-on-ink border border-ink-2 rounded text-[10px] font-mono font-bold uppercase cursor-pointer justify-center transition-colors">
+                            <Upload className="h-3.5 w-3.5 text-gold" />
+                            <span>Upload Image</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  const list = [...(properties.images || [])];
+                                  list[i] = { ...list[i], src: base64 };
+                                  updateProperty('images', list);
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-mono font-bold text-text-on-ink-muted mb-1 uppercase">Image URL</label>
+                        <input 
+                          type="text"
+                          value={img.src}
+                          onChange={(e) => {
+                            const list = [...(properties.images || [])];
+                            list[i] = { ...list[i], src: e.target.value };
+                            updateProperty('images', list);
+                          }}
+                          className="w-full text-[10px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-mono font-bold text-text-on-ink-muted mb-1 uppercase">Alt Description</label>
+                        <input 
+                          type="text"
+                          value={img.alt || ''}
+                          onChange={(e) => {
+                            const list = [...(properties.images || [])];
+                            list[i] = { ...list[i], alt: e.target.value };
+                            updateProperty('images', list);
+                          }}
+                          className="w-full text-[10px] px-2 py-1.5 border border-ink-2/80 rounded bg-ink text-text-on-ink outline-none focus:border-gold"
+                          placeholder="e.g. Vintage leather boots"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
